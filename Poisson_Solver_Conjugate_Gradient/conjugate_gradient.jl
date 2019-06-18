@@ -154,11 +154,12 @@ c1 = (1.0/16.0)^2
 c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
-    f[i,j] = c2 * sin(pi*x[i]) * sin(pi*y[j]) +
-                  c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
 
-    u_e[i,j] = sin(pi*x[i]) * sin(pi*y[j]) +
+    u_e[i,j] = sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
                c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+    f[i,j] = 4.0*c2*sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                  c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
 
     u_n[i,j] = 0.0
 end end

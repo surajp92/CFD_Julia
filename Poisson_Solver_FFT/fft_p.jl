@@ -5,6 +5,9 @@ using Printf
 using Plots
 using FFTW
 
+font = Plots.font("Times New Roman", 18)
+pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+
 function compute_l2norm(nx, ny, r)
     rms = 0.0
     # println(residual)
@@ -93,11 +96,6 @@ c2 = -8.0*pi*pi
 
 for j = 1:ny+1
     for i = 1:nx+1
-        # ue[i,j] = sin(3.0*2.0*pi*x[i]) + cos(2.0*2.0*pi*y[j])
-        # f[i,j] = -9.0*4.0*pi^2*sin(3.0*2.0*pi*x[i]) - 4.0*4.0*pi^2*cos(2.0*2.0*pi*y[j])
-
-        # ue[i,j] = cos(2.0*pi*x[i]) + cos(2.0*pi*y[j])
-        # f[i,j] = -4.0*pi*pi*ue[i,j]
 
         ue[i,j] = sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
                c1*sin(km*2.0*pi*x[i])*sin(km*2.0*pi*y[j])
@@ -132,7 +130,7 @@ println("L-2 Norm = ", rms_error);
 println("Maximum Norm = ", max_error);
 print("CPU Time = ", t);
 
-p1 = contour(x, y, transpose(ue), fill=true)
-p2 = contour(x, y, transpose(un), fill=true)
+p1 = contour(x, y, transpose(ue), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Exact")
+p2 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Fast Fourier transform")
 p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"contourp.pdf")
+savefig(p3,"fft_contour.pdf")

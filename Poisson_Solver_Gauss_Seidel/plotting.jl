@@ -21,7 +21,7 @@ p = plot(iter_hist,res_hist,lw = 3,
          #markershape = [:circle, :circle], markercolor = color,
          #markerstrokecolor = :black, markersize = 7)
 
-savefig(p,"gs_residual.png")
+savefig(p,"gs_residual.pdf")
 
 init_field = CSV.read("field_initial.csv")#, type=Float64)
 final_field = CSV.read("field_final.csv")#, datarow = 3, type=Float64)

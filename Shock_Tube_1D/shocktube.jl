@@ -126,7 +126,7 @@ function rhs(nx,dx,gamma,q,r)
 	fluxes(nx,gamma,qR,fL)
 
 	for i = 1:nx
-		println(i)
+		#println(i)
 		a = sqrt(gamma*((gamma-1.0)*(q[i,3]-0.5*q[i,2]*q[i,2]/q[i,1]))/q[i,1])
 		l1 = abs(q[i,2]/q[i,1])
 		l2 = abs(q[i,2]/q[i,1] + a)
@@ -337,7 +337,7 @@ end
 #---------------------------------------------------------------------------#
 nx = 512
 ns = 20
-dt = 0.0002
+dt = 0.0001
 tm = 0.20
 
 dx = 1.0/nx

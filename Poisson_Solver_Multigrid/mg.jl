@@ -25,7 +25,7 @@ function compute_l2norm(nx, ny, r)
     return rms
 end
 
-function restriction(nxf, nyf, nxc, nyc, r, sc)
+function restriction(nxf, nyf, nxc, nyc, r, ec)
 
     for j = 2:nyc for i = 2:nxc
         # grid index for fine grid for the same coarse point
@@ -37,53 +37,52 @@ function restriction(nxf, nyf, nxc, nyc, r, sc)
         corner = 1.0*(r[2*i-1+1, 2*j-1+1] + r[2*i-1+1, 2*j-1-1] +
                       r[2*i-1-1, 2*j-1+1] + r[2*i-1-1, 2*j-1-1])
         # restriction using trapezoidal rule
-        sc[i,j] = (center + grid + corner)/16.0
+        ec[i,j] = (center + grid + corner)/16.0
     end end
 
     # restriction for boundary points bottom and top
     for j = 1:nxc+1
         # bottom boundary i = 1
-        sc[1,j] = r[1, 2*j-1]
+        ec[1,j] = r[1, 2*j-1]
         # top boundary i = ny_coarse+1
-        sc[nyc+1] = r[nyf+1, 2*j-1]
+        ec[nyc+1,j] = r[nyf+1, 2*j-1]
     end
 
     # restriction for boundary poinys left and right
     for i = 1:nyc+1
         # left boundary j = 1
-        sc[i,1] = r[2*i-1,1]
+        ec[i,1] = r[2*i-1,1]
         # right boundary nx_coarse+1
-        sc[i,nxc+1] = r[2*i-1, nyf+1]
+        ec[i,nxc+1] = r[2*i-1, nyf+1]
     end
 end
 
-function prolongation(nxc, nyc, nxf, nyf, unc, prol_fine)
+function prolongation(nxc, nyc, nxf, nyf, unc, ef)
     for j = 1:nyc for i = 1:nxc
         # direct injection at center point
-        prol_fine[2*i-1, 2*j-1] = unc[i,j]
+        ef[2*i-1, 2*j-1] = unc[i,j]
         # east neighnour on fine grid corresponding to coarse grid point
-        prol_fine[2*i-1, 2*j-1+1] = 0.5*(unc[i,j] + unc[i,j+1])
+        ef[2*i-1, 2*j-1+1] = 0.5*(unc[i,j] + unc[i,j+1])
         # north neighbout on fine grid corresponding to coarse grid point
-        prol_fine[2*i-1+1, 2*j-1] = 0.5*(unc[i,j] + unc[i+1,j])
+        ef[2*i-1+1, 2*j-1] = 0.5*(unc[i,j] + unc[i+1,j])
         # NE neighbour on fine grid corresponding to coarse grid point
-        prol_fine[2*i-1+1, 2*j-1+1] = 0.25*(unc[i,j] + unc[i,j+1] +
-                                            unc[i+1,j] + unc[i+1,j+1])
-
+        ef[2*i-1+1, 2*j-1+1] = 0.25*(unc[i,j] + unc[i,j+1] +
+                                     unc[i+1,j] + unc[i+1,j+1])
     end end
 
     # update boundary points
     for i = 1:nyc+1
         # left boundary j = 1
-        prol_fine[2*i-1,1] = unc[i,1]
+        ef[2*i-1,1] = unc[i,1]
         # right boundary j = nx_fine+1
-        prol_fine[2*i-1, nyf+1] = unc[i,nxc+1]
+        ef[2*i-1, nyf+1] = unc[i,nxc+1]
     end
 
     for j = 1:nxc+1
         #bottom boundary i = 1
-        prol_fine[1,2*j-1] = unc[1,j]
+        ef[1,2*j-1] = unc[1,j]
         # top boundary i =  ny_fine+1
-        prol_fine[nyf+1,2*j-1] = unc[nyc+1,j]
+        ef[nyf+1,2*j-1] = unc[nyc+1,j]
     end
 end
 
@@ -240,14 +239,11 @@ c1 = (1.0/16.0)^2
 c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
-    # u_e[i,j] = sin(3.0*x[i]) + cos(2.0*y[j])
-    # f[i,j] = -9.0*sin(3.0*x[i]) -4.0*cos(2.0*y[j])
-    # u_n[i,j] = 0.0
-    f[i,j] = c2 * sin(pi*x[i]) * sin(pi*y[j]) +
-                  c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+    u_e[i,j] = sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
+               c1*sin(16.0*pi*x[i])*sin(16.0*pi*y[j])
 
-    u_e[i,j] = sin(pi*x[i]) * sin(pi*y[j]) +
-               c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+    f[i,j] = 4.0*c2*sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
+             c2*sin(16.0*pi*x[i])*sin(16.0*pi*y[j])
 
     u_n[i,j] = 0.0
 end end

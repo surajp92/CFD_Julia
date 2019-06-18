@@ -1,8 +1,8 @@
 Residual details: 
-L-2 Norm = 1.4063868812018883e-11 
-Maximum Norm = 3.268496584496461e-11 
-Iterations = 45303 
+L-2 Norm = 4.0998686510640136e-11 
+Maximum Norm = 8.127809536517816e-11 
+Iterations = 29319 
 Error details: 
-L-2 Norm = 3.591541768966526e-5 
-Maximum Norm = 0.00010030747065070678 
-CPU Time = 13.77840827 
+L-2 Norm = 0.00010436319042177262 
+Maximum Norm = 0.0002437673415294217 
+CPU Time = 8.555330131 

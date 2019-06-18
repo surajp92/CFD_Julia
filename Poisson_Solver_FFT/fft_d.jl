@@ -5,6 +5,9 @@ using Printf
 using Plots
 using FFTW
 
+font = Plots.font("Times New Roman", 18)
+pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+
 function compute_l2norm(nx, ny, r)
     rms = 0.0
     # println(residual)
@@ -27,17 +30,6 @@ function fps_sine(nx,ny,dx,dy,f)
 
     u = Array{Complex{Float64}}(undef,nx-1,ny-1)
 
-    #wave number indexing
-    #hx = 2.0*pi/nx
-
-    #for i = 1:Int64(nx/2)
-        #kx[i] = hx*(i-1.0)
-        #kx[i+Int64(nx/2)] = hx*(i-Int64(nx/2)-1)
-    #end
-    #kx[1] = eps
-
-    #ky = kx
-
     for i = 1:nx-1
         for j = 1:ny-1
             data[i,j] = f[i+1,j+1]
@@ -59,8 +51,8 @@ function fps_sine(nx,ny,dx,dy,f)
     return u
 end
 
-nx = 64
-ny = 64
+nx = 128
+ny = 128
 
 x_l = 0.0
 x_r = 1.0
@@ -119,7 +111,7 @@ println("L-2 Norm = ", rms_error);
 println("Maximum Norm = ", max_error);
 print("CPU Time = ", t);
 
-p1 = contour(x, y, transpose(ue), fill=true)
-p2 = contour(x, y, transpose(un), fill=true)
+p1 = contour(x, y, transpose(ue), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Exact")
+p2 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Fast Sine transform")
 p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"contourd.pdf")
+savefig(p3,"fst_contour.pdf")
