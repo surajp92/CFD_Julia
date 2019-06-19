@@ -3,6 +3,7 @@ clearconsole()
 using CPUTime
 using Printf
 using ASTInterpreter2
+using DelimitedFiles
 
 function compute_residual(nx, ny, dx, dy, f, u_n, r)
 
@@ -29,8 +30,8 @@ end
 function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
                       tolerance, output)
     # create text file for writing residual history
-    residual_plot = open("residual.csv", "w")
-    write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
+    residual_plot = open("residual.txt", "w")
+    # write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
 
     count = 0.0
 
@@ -86,14 +87,11 @@ output = open("output.txt", "w");
 write(output, "Residual details: \n");
 
 # create text file for initial and final field
-field_initial = open("field_initial.csv", "w");
-field_final = open("field_final.csv", "w");
+field_initial = open("field_initial.txt", "w")
+field_final = open("field_final.txt", "w")
 
-#write(field_initial, "x"," ","y"," ","f"," ","un"," ","ue"," ","e", "\n")
-#write(field_final, "x"," ","y"," ","f"," ","un"," ","ue"," ","e", "\n")
-
-write(field_initial, "x y f un ue \n")
-write(field_final, "x y f un ue e \n")
+# write(field_initial, "x y f un ue \n")
+# write(field_final, "x y f un ue e \n")
 
 x_l = 0.0
 x_r = 1.0
@@ -141,9 +139,8 @@ init_rms = 0.0
 rms = 0.0
 
 for j = 1:ny+1 for i = 1:nx+1
-    write(field_initial, @sprintf("%.16f",x[i])," ", @sprintf("%.16f", y[j]), " ",
-          @sprintf("%.16f", f[i,j])," ", @sprintf("%.16f", u_n[i,j])," ",
-          @sprintf("%.16f", u_e[i,j]), " \n")
+    write(field_initial, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(u_n[i,j]), " ", string(u_e[i,j]), " \n")
 end end
 val, t, bytes, gctime, memallocs = @timed begin
 
@@ -168,9 +165,8 @@ write(output, "Maximum Norm = ", string(max_error), " \n");
 write(output, "CPU Time = ", string(t), " \n");
 
 for j = 1:ny+1 for i = 1:nx+1
-    write(field_final, @sprintf("%.16f",x[i])," ", @sprintf("%.16f", y[j]), " ",
-          @sprintf("%.16f", f[i,j])," ", @sprintf("%.16f", u_n[i,j])," ",
-          @sprintf("%.16f", u_e[i,j])," ", @sprintf("%.16f",(u_error[i,j]))," \n")
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(u_n[i,j]), " ", string(u_e[i,j]), " \n")
 end end
 
 close(field_initial)

@@ -1,15 +1,18 @@
-clearconsole()
+using DelimitedFiles
 
 using CSV
+#using PyPlot
+#using GR
 using Plots
+#plotly()
 font = Plots.font("Times New Roman", 18)
-pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+#pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 
 nx = 128
 ny = 128
-residual_hist = CSV.read("residual.csv")#, datarow = 3, type=Float64)
+residual_hist = readdlm("residual.txt")#, datarow = 3, type=Float64)
 iter_hist =  residual_hist[:,1]
-res_hist = convert(Matrix, residual_hist[:,2:3])
+res_hist = residual_hist[:,2:3]
 
 color=[:red :blue]
 
@@ -23,8 +26,8 @@ p = plot(iter_hist,res_hist,lw = 3,
 
 savefig(p,"gs_residual.pdf")
 
-init_field = CSV.read("field_initial.csv")#, type=Float64)
-final_field = CSV.read("field_final.csv")#, datarow = 3, type=Float64)
+init_field = readdlm("field_initial.txt")#, type=Float64)
+final_field = readdlm("field_final.txt")#, datarow = 3, type=Float64)
 
 x = convert(Array,init_field[:,1])
 y = convert(Array,init_field[:,2])
@@ -45,4 +48,4 @@ YY = repeat(yy, 1, length(xx))
 p1 = contour(xx, yy, u_e, fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Exact")
 p2 = contour(xx, yy, u_n, fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Gauss-Seidel solution")
 p3 = plot(p1,p2, size = (1300, 600))
-savefig(p3,"gs_contour.pdf")
+savefig(p3,"gs_contour.png")

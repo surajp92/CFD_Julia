@@ -5,4 +5,4 @@ Iterations = 29319
 Error details: 
 L-2 Norm = 0.00010436319042177262 
 Maximum Norm = 0.0002437673415294217 
-CPU Time = 8.555330131 
+CPU Time = 8.326474706 

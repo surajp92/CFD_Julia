@@ -5,6 +5,7 @@ using Printf
 using Plots
 using FFTW
 
+
 font = Plots.font("Times New Roman", 18)
 pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 
@@ -221,21 +222,20 @@ end end
 
 numerical(nx,ny,nt,dx,dy,dt,re,wn,sn,rms)
 
-time = tf
+field_final = open("field_final.txt", "w");
+#write(field_final, "x y wn sn \n")
 
-p1 = contour(x, y, transpose(wn), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Vorticity")
-p2 = contour(x, y, transpose(sn), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Streamfunction")
-p3 = plot(p1,p2, size = (1300, 600))
-savefig(p3,"cavity.pdf")
-
-color=[:red]
+residual_plot = open("residual_plot.txt", "w");
+#write(residual_plot, "n res \n")
 t = Array(dt:dt:tf)
-p4 = plot(t,rms,lw = 3,
-         ylabel = "Residual", yscale = :log10,
-         xlabel="Time", #xlims=(0,maximum(iter_hist)+1),
-         grid=(:none),
-         label=["Residual"], color=color)
-         #markershape = [:circle, :circle], markercolor = color,
-         #markerstrokecolor = :black, markersize = 7)
 
-savefig(p4,"residual.pdf")
+for n = 1:nt
+    write(residual_plot, string(n), " ",string(rms[n])," \n");
+end
+close(residual_plot)
+
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(wn[i,j]),
+          " ", string(sn[i,j]), " \n")
+end end
+close(field_final)
