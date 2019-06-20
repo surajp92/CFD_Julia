@@ -1,13 +1,10 @@
-clearconsole()
+
 using DelimitedFiles
 
 using CSV
 using PyPlot
-#using GR
-#using Plots
-#plotly()
-# font = plt.font("Times New Roman", 18)
-# pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+#rc("font", family="Times New Roman", size=18.0)
+rc("font", family="Arial", size=16.0)
 
 nx = 128
 ny = 128
@@ -19,9 +16,10 @@ color=[:red :blue]
 
 fig, ax = plt.subplots()
 ax.semilogy(iter_hist, res_hist[:,1], color="red",lw=2,label="rms")
-ax.semilogy(iter_hist, res_hist[:,2], color="blue",lw=2,label="rms/rms_0")
+ax.semilogy(iter_hist, res_hist[:,2], color="blue",lw=2,label="rms/rms\$_0\$")
 ax.set_xlim(0,30000)
 ax.legend()
+fig.tight_layout()
 fig.savefig("gs_residual.pdf")
 
 init_field = readdlm("field_initial.txt")#, type=Float64)
@@ -43,10 +41,19 @@ XX = repeat(xx, 1, length(yy))
 XX = convert(Matrix,transpose(XX))
 YY = repeat(yy, 1, length(xx))
 
-fig, ax = plt.subplots(figsize=(7,5))
-cs = ax.contourf(xx, yy, transpose(u_e),levels=20, cmap="jet")
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-cbar = fig.colorbar(cs)
+fig = figure("An example", figsize=(12,6));
+ax1 = fig[:add_subplot](1,2,1);
+ax2 = fig[:add_subplot](1,2,2);
+
+cs = ax1.contourf(xx, yy, transpose(u_e),levels=20, cmap="jet", vmin=-1, vmax=1)
+ax1.set_title("Exact solution")
+plt[:subplot](ax1); cs
+cs = ax2.contourf(xx, yy, transpose(u_n),levels=20, cmap="jet", vmin=-1, vmax=1)
+ax2.set_title("Numerical solution")
+plt[:subplot](ax2); cs
+
+fig.colorbar(cs, ax = ax1)
+fig.colorbar(cs, ax = ax2)
+
 fig.tight_layout()
 fig.savefig("gs_contour.pdf")

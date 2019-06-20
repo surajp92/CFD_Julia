@@ -1,30 +1,29 @@
-clearconsole()
+
+using DelimitedFiles
 
 using CSV
-using Plots
-font = Plots.font("Times New Roman", 18)
-pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+using PyPlot
+#rc("font", family="Times New Roman", size=18.0)
+rc("font", family="Arial", size=16.0)
 
 nx = 128
 ny = 128
-residual_hist = CSV.read("residual.csv")#, datarow = 3, type=Float64)
+residual_hist = readdlm("residual.txt")#, datarow = 3, type=Float64)
 iter_hist =  residual_hist[:,1]
 res_hist = convert(Matrix, residual_hist[:,2:3])
 
 color=[:red :blue]
 
-p = plot(iter_hist,res_hist,lw = 3,
-         ylabel = "L2 Norm", yscale = :log10,
-         xlabel="Iteration count", xlims=(0,maximum(iter_hist)+1),
-         grid=(:none),
-         label=["rms" "rms/rms\$_0\$"], color=color)
-         # markershape = [:circle, :circle], markercolor = color,
-         # markerstrokecolor = :black, markersize = 7)
+fig, ax = plt.subplots()
+ax.semilogy(iter_hist, res_hist[:,1], color="red",lw=2,label="rms")
+ax.semilogy(iter_hist, res_hist[:,2], color="blue",lw=2,label="rms/rms\$_0\$")
+ax.set_xlim(0,7)
+ax.legend()
+fig.tight_layout()
+fig.savefig("cg_residual.pdf")
 
-savefig(p,"cg_residual.pdf")
-
-init_field = CSV.read("field_initial.csv")#, type=Float64)
-final_field = CSV.read("field_final.csv")#, datarow = 3, type=Float64)
+init_field = readdlm("field_initial.txt")#, type=Float64)
+final_field = readdlm("field_final.txt")#, datarow = 3, type=Float64)
 
 x = convert(Array,init_field[:,1])
 y = convert(Array,init_field[:,2])
@@ -42,7 +41,19 @@ XX = repeat(xx, 1, length(yy))
 XX = convert(Matrix,transpose(XX))
 YY = repeat(yy, 1, length(xx))
 
-p1 = contour(xx, yy, u_e, fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Exact solution")
-p2 = contour(xx, yy, u_n, fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Conjugate Gradient solution")
-p3 = plot(p1,p2, size = (1300, 600))
-savefig(p3,"cg_contour.pdf")
+fig = figure("An example", figsize=(12,6));
+ax1 = fig[:add_subplot](1,2,1);
+ax2 = fig[:add_subplot](1,2,2);
+
+cs = ax1.contourf(xx, yy, transpose(u_e),levels=20, cmap="jet", vmin=-1, vmax=1)
+ax1.set_title("Exact solution")
+plt[:subplot](ax1); cs
+cs = ax2.contourf(xx, yy, transpose(u_n),levels=20, cmap="jet", vmin=-1, vmax=1)
+ax2.set_title("Numerical solution")
+plt[:subplot](ax2); cs
+
+fig.colorbar(cs, ax = ax1)
+fig.colorbar(cs, ax = ax2)
+
+fig.tight_layout()
+fig.savefig("cg_contour.pdf")
