@@ -100,8 +100,8 @@ function numerical(nx,ns,nt,dx,dt,u)
         end
 
         if (mod(j,freq) == 0)
-            k = k+1
             u[:,k] = un[:]
+            k = k+1
         end
     end
 end
@@ -293,7 +293,7 @@ end
 # main program
 #---------------------------------------------------------------------------#
 nx = 200
-ns = 20
+ns = 10
 dt = 0.0001
 tm = 0.25
 
@@ -301,15 +301,27 @@ dx = 1.0/nx
 nt = Int64(tm/dt)
 ds = tm/ns
 
-u = Array{Float64}(undef, nx+1, ns+1)
+u = Array{Float64}(undef, nx+1, ns)
 numerical(nx,ns,nt,dx,dt,u)
 
-x = 0:dx:1.0
+x = Array(0:dx:1.0)
 
-p1 = plot(x,u,lw = 1,
-          xlabel="\$X\$", ylabel = "\$U\$",
-          xlims=(minimum(x),maximum(x)),
-          grid=(:none), legend=:none)
+solution = open("solution_d.txt", "w")
 
-plot(p1, size = (1000, 600))
-savefig("crweno.pdf")
+for i = 1:nx+1
+    write(solution, string(x[i]), " ",)
+    for j = 1:ns
+        write(solution, string(u[i,j]), " ")
+    end
+    write(solution, "\n",)
+end
+
+close(solution)
+
+# p1 = plot(x,u,lw = 1,
+#           xlabel="\$X\$", ylabel = "\$U\$",
+#           xlims=(minimum(x),maximum(x)),
+#           grid=(:none), legend=:none)
+#
+# plot(p1, size = (1000, 600))
+# savefig("crweno.pdf")
