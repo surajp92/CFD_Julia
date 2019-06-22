@@ -65,7 +65,6 @@ function ctdms(a,b,c,alpha,beta,r,x,s,e)
     for i = s:e
         x[i] = x[i] - fact*z[i]
     end
-
 end
 
 #-----------------------------------------------------------------------------#

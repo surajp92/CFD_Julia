@@ -32,9 +32,9 @@ function numerical(nx,ns,nt,dx,dt,q)
 
 	# nodal storage location (grid)
     for i = 1:nx
-        x[i] = 0.5*dx + dx*(i-1)
+        x[i] = -0.5*dx + dx*(i)
     end
-
+	plot(x)
 	xc = 0.5 # seperator location
 	for i = 1:nx
 	  	if (x[i] > xc)
@@ -82,7 +82,9 @@ function numerical(nx,ns,nt,dx,dt,q)
 
         if (mod(n,freq) == 0)
             ri = ri + 1
-            q[:,:,ri] = qn[:,:]
+			for i = 1:nx for m = 1:3
+            	q[i,m,ri] = qn[i,m]
+			end end
         end
     end
 end
@@ -102,7 +104,6 @@ end
 #-----------------------------------------------------------------------------#
 # Calculate right hand side terms of the Euler equations
 #-----------------------------------------------------------------------------#
-
 function rhs(nx,dx,gamma,q,r)
     qL = Array{Float64}(undef,nx+1,3)
     qR = Array{Float64}(undef,nx+1,3)
@@ -112,38 +113,16 @@ function rhs(nx,dx,gamma,q,r)
 
 	f = Array{Float64}(undef,nx+1,3)
 
-	rad = Array{Float64}(undef,nx)
-	ps = Array{Float64}(undef,nx+1)
-
 	# WENO Reconstruction
-	for m = 1:3
-  		qL[:,m] = wenoL(nx,q[:,m])
-    	qR[:,m] = wenoR(nx,q[:,m])
-	end
+	qL = wenoL(nx,q)
+    qR = wenoR(nx,q)
 
 	# Computing fluxes
 	fluxes(nx,gamma,qL,fL)
-	fluxes(nx,gamma,qR,fL)
+	fluxes(nx,gamma,qR,fR)
 
-	for i = 1:nx
-		#println(i)
-		a = sqrt(gamma*((gamma-1.0)*(q[i,3]-0.5*q[i,2]*q[i,2]/q[i,1]))/q[i,1])
-		l1 = abs(q[i,2]/q[i,1])
-		l2 = abs(q[i,2]/q[i,1] + a)
-		l3 = abs(q[i,2]/q[i,1] - a)
-		rad[i] = max(l1,l2,l3)
-	end
-
-	for i = 2:nx
-		ps[i] = max(rad[i-1], rad[i])
-	end
-		ps[1] = rad[1]
-		ps[nx+1] = rad[nx]
-
-	# Interface fluxes (Rusanov)
-	for i = 1:nx+1 for m = 1:3
-		f[i,m] = 0.5*((fR[i,m]+fL[i,m]) - ps[i]*(qR[i,m]-qL[i,m]))
-	end end
+	# compute Riemann solver
+	rusanov(nx,gamma,q,qL,qR,f,fL,fR)
 
 	# RHS
 	for i = 1:nx for m = 1:3
@@ -152,123 +131,189 @@ function rhs(nx,dx,gamma,q,r)
 end
 
 #-----------------------------------------------------------------------------#
+# Riemann solver: Rusanov
+#-----------------------------------------------------------------------------#
+function rusanov(nx,gamma,q,qL,qR,f,fL,fR)
+
+	ps = Array{Float64}(undef,nx+1)
+
+	wavespeed(nx,gamma,q,ps)
+	# wavespeed2(nx,gamma,qL,qR,ps)
+	# Interface fluxes (Rusanov)
+	for i = 1:nx+1 for m = 1:3
+		f[i,m] = 0.5*(fR[i,m]+fL[i,m]) - 0.5*ps[i]*(qR[i,m]-qL[i,m])
+	end end
+end
+
+#-----------------------------------------------------------------------------#
+# compute wave speed
+#-----------------------------------------------------------------------------#
+function wavespeed(nx,gamma,q,ps)
+	rad = Array{Float64}(undef,nx)
+	# spectral radius of Jacobian
+	for i = 1:nx
+		a = sqrt((gamma*((gamma-1.0)*(q[i,3]-0.5*q[i,2]*q[i,2]/q[i,1]))/q[i,1]))
+		l1 = abs(q[i,2]/q[i,1])
+		l2 = abs(q[i,2]/q[i,1] + a)
+		l3 = abs(q[i,2]/q[i,1] - a)
+		rad[i] = max(l1,l2,l3)
+	end
+
+	# propagation speed
+	for i = 2:nx
+		ps[i] = max(rad[i-1], rad[i])
+	end
+	ps[1] = ps[2]
+	ps[nx+1] = ps[nx]
+end
+
+function wavespeed2(nx,gamma,uL,uR,ps)
+	rad = Array{Float64}(undef,nx)
+	# spectral radius of Jacobian
+	gm = gamma-1.0
+	for i = 1:nx+1
+		#Left and right states:
+		rhLL = uL[i,1]
+		uuLL = uL[i,2]/rhLL
+		eeLL = uL[i,3]/rhLL
+	    ppLL = gm*(eeLL*rhLL - 0.5*rhLL*(uuLL*uuLL))
+	    hhLL = eeLL + ppLL/rhLL
+
+
+		rhRR = uR[i,1]
+		uuRR = uR[i,2]/rhRR
+		eeRR = uR[i,3]/rhRR
+	    ppRR = gm*(eeRR*rhRR - 0.5*rhRR*(uuRR*uuRR))
+	    hhRR = eeRR + ppRR/rhRR
+
+		alpha = 1.0/(sqrt(rhLL) + sqrt(rhRR))
+
+		uu = (sqrt(rhLL)*uuLL + sqrt(rhRR)*uuRR)*alpha
+		hh = (sqrt(rhLL)*hhLL + sqrt(rhRR)*hhRR)*alpha
+		aa = sqrt(abs(gm*(hh-0.5*uu*uu)))
+
+		ps[i] = aa + abs(uu)
+	end
+end
+#-----------------------------------------------------------------------------#
 # WENO reconstruction for upwind direction (positive; left to right)
 # u(i): solution values at finite difference grid nodes i = 1,...,N
 # f(j): reconstructed values at nodes j = i-1/2; j = 1,...,N+1
 #-----------------------------------------------------------------------------#
 function wenoL(n,u)
-	f = Array{Float64}(undef,n+1)
+	f = Array{Float64}(undef,n+1,3)
 
-    i = 1
-    v1 = 4.0*u[i] - 3.0*u[i+1]
-    v2 = 3.0*u[i] - 2.0*u[i+1]
-    v3 = 2.0*u[i] - u[i+1]
-    v4 = u[i]
-    v5 = u[i+1]
-    f[i] = wcL(v1,v2,v3,v4,v5)
+	for m = 1:3
+	    i = 0
+	    v1 = u[i+3,m]
+	    v2 = u[i+2,m]
+	    v3 = u[i+1,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+2,m]
+	    f[i+1,m] = wcL(v1,v2,v3,v4,v5)
 
-    i = 2
-    v1 = 3.0*u[i-1] - 2.0*u[i]
-    v2 = 2.0*u[i-1] - u[i]
-    v3 = u[i-1]
-    v4 = u[i]
-    v5 = u[i+1]
-    f[i] = wcL(v1,v2,v3,v4,v5)
+	    i = 1
+	    v1 = u[i+1,m]
+	    v2 = u[i,m]
+	    v3 = u[i,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+2,m]
+	    f[i+1,m] = wcL(v1,v2,v3,v4,v5)
 
-    i = 3
-    v1 = 2.0*u[i-2] - u[i-1]
-    v2 = u[i-2]
-    v3 = u[i-1]
-    v4 = u[i]
-    v5 = u[i+1]
-    f[i] = wcL(v1,v2,v3,v4,v5)
+	    i = 2
+	    v1 = u[i-1,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+2,m]
+	    f[i+1,m] = wcL(v1,v2,v3,v4,v5)
 
-    for i = 4:n-1
-        v1 = u[i-3]
-        v2 = u[i-2]
-        v3 = u[i-1]
-        v4 = u[i]
-        v5 = u[i+1]
-        f[i] = wcL(v1,v2,v3,v4,v5)
-    end
+	    for i = 3:n-2
+	        v1 = u[i-2,m]
+	        v2 = u[i-1,m]
+	        v3 = u[i,m]
+	        v4 = u[i+1,m]
+	        v5 = u[i+2,m]
+	        f[i+1,m] = wcL(v1,v2,v3,v4,v5)
+	    end
 
-    i = n
-    v1 = u[i-3]
-    v2 = u[i-2]
-    v3 = u[i-1]
-    v4 = u[i]
-    v5 = 2.0*u[i] - u[i-1]
-    f[i] = wcL(v1,v2,v3,v4,v5)
+	    i = n-1
+	    v1 = u[i-2,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+1,m]
+	    f[i+1,m] = wcL(v1,v2,v3,v4,v5)
 
-    i = n+1
-    v1 = u[i-3]
-    v2 = u[i-2]
-    v3 = u[i-1]
-    v4 = 2.0*u[i-1] - u[i-2]
-    v5 = 3.0*u[i-1] - 2.0*u[i-2]
-    f[i] = wcL(v1,v2,v3,v4,v5)
-
+	    i = n
+	    v1 = u[i-2,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i,m]
+	    v4 = u[i,m]
+	    v5 = u[i-1,m]
+	    f[i+1,m] = wcL(v1,v2,v3,v4,v5)
+	end
 	return f
-
 end
 
 #-----------------------------------------------------------------------------#
-# CRWENO reconstruction for downwind direction (negative; right to left)
+# WENO reconstruction for downwind direction (negative; right to left)
 # u(i): solution values at finite difference grid nodes i = 1,...,N+1
 # f(j): reconstructed values at nodes j = i-1/2; j = 2,...,N+1
 #-----------------------------------------------------------------------------#
 function wenoR(n,u)
-	f = Array{Float64}(undef,n+1)
+	f = Array{Float64}(undef,n+1,3)
 
-    i = 1
-    v1 = 3.0*u[i] - 2.0*u[i+1]
-    v2 = 2.0*u[i] - u[i+1]
-    v3 = u[i]
-    v4 = u[i+1]
-    v5 = u[i+2]
-    f[i] = wcR(v1,v2,v3,v4,v5)
+	for m = 1:3
+	    i = 1
+	    v1 = u[i+1,m]
+	    v2 = u[i,m]
+	    v3 = u[i,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+2,m]
+	    f[i,m] = wcR(v1,v2,v3,v4,v5)
 
-    i = 2
-    v1 = 2.0*u[i-1] - u[i]
-    v2 = u[i-1]
-    v3 = u[i]
-    v4 = u[i+1]
-    v5 = u[i+2]
-    f[i] = wcR(v1,v2,v3,v4,v5)
+	    i = 2
+	    v1 = u[i-1,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+2,m]
+	    f[i,m] = wcR(v1,v2,v3,v4,v5)
 
-    for i = 3:n-2
-        v1 = u[i-2]
-        v2 = u[i-1]
-        v3 = u[i]
-        v4 = u[i+1]
-        v5 = u[i+2]
-        f[i] = wcR(v1,v2,v3,v4,v5)
-    end
+	    for i = 3:n-2
+	        v1 = u[i-2,m]
+	        v2 = u[i-1,m]
+	        v3 = u[i,m]
+	        v4 = u[i+1,m]
+	        v5 = u[i+2,m]
+	        f[i,m] = wcR(v1,v2,v3,v4,v5)
+	    end
 
-    i = n-1
-    v1 = u[i-2]
-    v2 = u[i-1]
-    v3 = u[i]
-    v4 = u[i+1]
-    v5 = 2.0*u[i+1] - u[i]
-    f[i] = wcR(v1,v2,v3,v4,v5)
+	    i = n-1
+	    v1 = u[i-2,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i,m]
+	    v4 = u[i+1,m]
+	    v5 = u[i+1,m]
+	    f[i,m] = wcR(v1,v2,v3,v4,v5)
 
-    i = n
-    v1 = u[i-2]
-    v2 = u[i-1]
-    v3 = u[i]
-    v4 = 2.0*u[i] - u[i-1]
-    v5 = 3.0*u[i] - 2.0*u[i-1]
-    f[i] = wcR(v1,v2,v3,v4,v5)
+	    i = n
+	    v1 = u[i-2,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i,m]
+	    v4 = u[i,m]
+	    v5 = u[i-1,m]
+	    f[i,m] = wcR(v1,v2,v3,v4,v5)
 
-    i = n+1
-    v1 = u[i-2]
-    v2 = u[i-1]
-    v3 = 2.0*u[i-1] - u[i-2]
-    v4 = 3.0*u[i-1] - 2.0*u[i-2]
-    v5 = 4.0*u[i-1] - 3.0*u[i-2]
-    f[i] = wcR(v1,v2,v3,v4,v5)
-
+	    i = n+1
+	    v1 = u[i-2,m]
+	    v2 = u[i-1,m]
+	    v3 = u[i-1,m]
+	    v4 = u[i-2,m]
+	    v5 = u[i-3,m]
+	    f[i,m] = wcR(v1,v2,v3,v4,v5)
+	end
 	return f
 
 end
@@ -335,7 +380,7 @@ end
 #---------------------------------------------------------------------------#
 # main program
 #---------------------------------------------------------------------------#
-nx = 512
+nx = 256
 ns = 20
 dt = 0.0001
 tm = 0.20
@@ -344,16 +389,23 @@ dx = 1.0/nx
 nt = Int64(tm/dt)
 ds = tm/ns
 
-q = Array{Float64}(undef, nx,3,ns+1)
+#q = Array{Float64}(zero, nx,3,ns+1)
+q = zeros(Float64,nx,3,ns+1)
 numerical(nx,ns,nt,dx,dt,q)
 
 x = Array(0.5*dx:dx:1.0-0.5*dx)
 
-qplot = q[:,1,:]
-p1 = plot(x,qplot,lw = 1,
-          xlabel="\$X\$", ylabel = "\$U\$",
-          xlims=(minimum(x),maximum(x)),
-          grid=(:none), legend=:none)
-
-plot(p1, size = (1000, 600))
-savefig("shocktube.pdf")
+solution_d = open("solution_d.txt", "w")
+solution_v = open("solution_v.txt", "w")
+for i = 1:nx
+    write(solution_d, string(x[i]), " ",)
+	write(solution_v, string(x[i]), " ",)
+    for n = 1:ns+1
+        write(solution_d, string(q[i,1,n]), " ")
+		write(solution_v, string(q[i,2,n]), " ")
+    end
+    write(solution_d, "\n",)
+	write(solution_v, "\n",)
+end
+close(solution_d)
+close(solution_v)
