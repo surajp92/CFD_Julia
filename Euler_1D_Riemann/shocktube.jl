@@ -137,8 +137,8 @@ function rusanov(nx,gamma,q,qL,qR,f,fL,fR)
 
 	ps = Array{Float64}(undef,nx+1)
 
-	wavespeed(nx,gamma,q,ps)
-	# wavespeed2(nx,gamma,qL,qR,ps)
+	#wavespeed(nx,gamma,q,ps)
+	wavespeed2(nx,gamma,qL,qR,ps)
 	# Interface fluxes (Rusanov)
 	for i = 1:nx+1 for m = 1:3
 		f[i,m] = 0.5*(fR[i,m]+fL[i,m]) - 0.5*ps[i]*(qR[i,m]-qL[i,m])
@@ -380,7 +380,7 @@ end
 #---------------------------------------------------------------------------#
 # main program
 #---------------------------------------------------------------------------#
-nx = 256
+nx = 512
 ns = 20
 dt = 0.0001
 tm = 0.20
