@@ -26,7 +26,7 @@ function numerical(nx,ns,nt,dx,dt,q)
 
 	# TVD RK3 for time integration
     for n = 1:nt # time step
-		println(n)
+
         rhs(nx,dx,un,r)
 
         for i = 1:nx
@@ -47,6 +47,7 @@ function numerical(nx,ns,nt,dx,dt,q)
 
         if (mod(n,freq) == 0)
             k = k+1
+			println(n)
 			for i = 1:nx
             	u[i,k] = un[i]
 			end
@@ -67,51 +68,58 @@ end
 # Calculate right hand side terms of the Euler equations
 #-----------------------------------------------------------------------------#
 function rhs(nx,dx,u,r)
-    uL = Array{Float64}(undef,nx+1)
-    uR = Array{Float64}(undef,nx+1)
+	# flux computed at nodal points an dpositive and negative splitting
+	f = Array{Float64}(undef,nx)
+    fP = Array{Float64}(undef,nx)
+    fN = Array{Float64}(undef,nx)
 
+	# wave speed at nodal points
+	ps = Array{Float64}(undef,nx)
+
+	# left and right side fluxes at the interface
 	fL = Array{Float64}(undef,nx+1)
     fR = Array{Float64}(undef,nx+1)
 
-	# flux used to compute right hand side
-	f = Array{Float64}(undef,nx+1)
+	for i = 1:nx
+		f[i] = 0.5*u[i]*u[i]
+	end
+
+	wavespeed(nx,u,ps)
+
+	for i = 1:nx
+		fP[i] = 0.5*(f[i] + ps[i]*u[i])
+		fN[i] = 0.5*(f[i] - ps[i]*u[i])
+	end
 
 	# WENO Reconstruction
-	uL = wenoL(nx,u)
-    uR = wenoR(nx,u)
+	# compute upwind reconstruction for positive flux (left to right)
+	fL = wenoL(nx,fP)
+	# compute downwind reconstruction for negative flux (right to left)
+    fR = wenoR(nx,fN)
 
-	# Computing fluxes
-	fluxes(nx,uL,fL)
-	fluxes(nx,uR,fR)
-
-	# compute Riemann solver (flux at interface)
-	rusanov(nx,u,uL,uR,f,fL,fR)
-
-	# RHS
+	# compute RHS using flux splitting
 	for i = 1:nx
-		r[i] = -(f[i+1] - f[i])/dx
+		r[i] = -(fL[i+1] - fL[i])/dx - (fR[i+1] - fR[i])/dx
 	end
 end
 
 #-----------------------------------------------------------------------------#
-# Riemann solver: Rusanov
+# Compute wave speed (Jacobian = df/du)
 #-----------------------------------------------------------------------------#
-function rusanov(nx,u,uL,uR,f,fL,fR)
-
-	# propagation speed
-	ps = Array{Float64}(undef,nx+1)
-	for i = 2:nx
-		ps[i] = max(abs(ps[i]), abs(ps[i-1]))
+function wavespeed(n,u,ps)
+	for i = 3:n-2
+		ps[i] = max(abs(u[i-2]), abs(u[i-1]), abs(u[i]), abs(u[i+1]), abs(u[i+2]))
 	end
-	ps[1] = max(abs(ps[1]), abs(ps[nx]))
-	ps[nx+1] = max(abs(ps[1]), abs(ps[nx]))
-
-	# Interface fluxes (Rusanov)
-	for i = 1:nx+1
-		f[i] = 0.5*(fR[i]+fL[i]) - 0.5*ps[i]*(uR[i]-uL[i])
-	end
+	# periodicity
+	i = 1
+	ps[i] = max(abs(u[n-1]), abs(u[n]), abs(u[i]), abs(u[i+1]), abs(u[i+2]))
+	i = 2
+	ps[i] = max(abs(u[n]), abs(u[i-1]), abs(u[i]), abs(u[i+1]), abs(u[i+2]))
+	i = n-1
+	ps[i] = max(abs(u[i-2]), abs(u[i-1]), abs(u[i]), abs(u[i+1]), abs(u[1]))
+	i = n
+	ps[i] = max(abs(u[i-2]), abs(u[i-1]), abs(u[i]), abs(u[1]), abs(u[2]))
 end
-
 
 #-----------------------------------------------------------------------------#
 # WENO reconstruction for upwind direction (positive; left to right)
@@ -119,7 +127,7 @@ end
 # f(j): reconstructed values at nodes j = i-1/2; j = 1,...,N+1
 #-----------------------------------------------------------------------------#
 function wenoL(n,u)
-	f = Array{Float64}(undef,n+1,3)
+	f = Array{Float64}(undef,n+1)
 
     i = 0
     v1 = u[n-2]
