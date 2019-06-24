@@ -5,6 +5,9 @@ using Printf
 using Plots
 using FFTW
 
+font = Plots.font("Times New Roman", 18)
+pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
+
 function compute_l2norm(nx, ny, r)
     rms = 0.0
     # println(residual)
@@ -93,11 +96,6 @@ c2 = -8.0*pi*pi
 
 for j = 1:ny+1
     for i = 1:nx+1
-        # ue[i,j] = sin(3.0*2.0*pi*x[i]) + cos(2.0*2.0*pi*y[j])
-        # f[i,j] = -9.0*4.0*pi^2*sin(3.0*2.0*pi*x[i]) - 4.0*4.0*pi^2*cos(2.0*2.0*pi*y[j])
-
-        # ue[i,j] = cos(2.0*pi*x[i]) + cos(2.0*pi*y[j])
-        # f[i,j] = -4.0*pi*pi*ue[i,j]
 
         ue[i,j] = sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
                c1*sin(km*2.0*pi*x[i])*sin(km*2.0*pi*y[j])
@@ -108,6 +106,15 @@ for j = 1:ny+1
         un[i,j] = 0.0
     end
 end
+
+# create text file for initial and final field
+field_initial = open("field_initial.txt", "w")
+field_final = open("field_final.txt", "w")
+
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_initial, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
+end end
 
 val, t, bytes, gctime, memallocs = @timed begin
 
@@ -132,7 +139,10 @@ println("L-2 Norm = ", rms_error);
 println("Maximum Norm = ", max_error);
 print("CPU Time = ", t);
 
-p1 = contour(x, y, transpose(ue), fill=true)
-p2 = contour(x, y, transpose(un), fill=true)
-p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"contourd.pdf")
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
+end end
+
+close(field_initial)
+close(field_final)

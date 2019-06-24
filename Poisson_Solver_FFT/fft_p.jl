@@ -107,6 +107,15 @@ for j = 1:ny+1
     end
 end
 
+# create text file for initial and final field
+field_initial = open("field_initial.txt", "w")
+field_final = open("field_final.txt", "w")
+
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_initial, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
+end end
+
 val, t, bytes, gctime, memallocs = @timed begin
 
 un[1:nx,1:ny] = fps(nx,ny,dx,dy,f)
@@ -130,7 +139,10 @@ println("L-2 Norm = ", rms_error);
 println("Maximum Norm = ", max_error);
 print("CPU Time = ", t);
 
-p1 = contour(x, y, transpose(ue), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Exact")
-p2 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Fast Fourier transform")
-p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"fft_contour.pdf")
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
+end end
+
+close(field_initial)
+close(field_final)

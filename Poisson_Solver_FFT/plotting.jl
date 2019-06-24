@@ -1,4 +1,3 @@
-
 using DelimitedFiles
 
 using CSV
@@ -8,19 +7,6 @@ rc("font", family="Arial", size=16.0)
 
 nx = 128
 ny = 128
-residual_hist = readdlm("residual.txt")#, datarow = 3, type=Float64)
-iter_hist =  residual_hist[:,1]
-res_hist = convert(Matrix, residual_hist[:,2:3])
-
-color=[:red :blue]
-
-fig, ax = plt.subplots()
-ax.semilogy(iter_hist, res_hist[:,1], color="red",lw=2,label="rms")
-ax.semilogy(iter_hist, res_hist[:,2], color="blue",lw=2,label="rms/rms\$_0\$")
-ax.set_xlim(0,7)
-ax.legend()
-fig.tight_layout()
-fig.savefig("cg_residual.pdf")
 
 init_field = readdlm("field_initial.txt")#, type=Float64)
 final_field = readdlm("field_final.txt")#, datarow = 3, type=Float64)
@@ -56,4 +42,4 @@ fig.colorbar(cs, ax = ax1)
 fig.colorbar(cs, ax = ax2)
 
 fig.tight_layout()
-fig.savefig("cg_contour.pdf")
+fig.savefig("fft_contour.pdf")

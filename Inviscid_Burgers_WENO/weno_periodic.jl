@@ -17,6 +17,57 @@ function compute_l2norm(nx,r)
 end
 
 #-----------------------------------------------------------------------------#
+# Solution to tridigonal system using Thomas algorithm
+#-----------------------------------------------------------------------------#
+function tdms(a,b,c,r,x,s,e)
+    gam = Array{Float64}(undef, e)
+    bet = b[s]
+    x[s] = r[s]/bet
+
+    for i = s+1:e
+        gam[i] = c[i-1]/bet
+        bet = b[i] - a[i]*gam[i]
+        x[i] = (r[i] - a[i]*x[i-1])/bet
+    end
+
+    for i = e-1:-1:s
+        x[i] = x[i] - gam[i+1]*x[i+1]
+    end
+end
+
+#-----------------------------------------------------------------------------#
+# Solution to tridigonal system using cyclic Thomas algorithm
+#-----------------------------------------------------------------------------#
+function ctdms(a,b,c,alpha,beta,r,x,s,e)
+    bb = Array{Float64}(undef, e)
+    u = Array{Float64}(undef, e)
+    z = Array{Float64}(undef, e)
+    gamma = -b[s]
+    bb[s] = b[s] -gamma
+    bb[e] = b[e] - alpha*beta/gamma
+
+    for i = s+1:e-1
+        bb[i] = b[i]
+    end
+
+    tdms(a,bb,c,r,x,s,e)
+
+    u[s] = gamma
+    u[e] = alpha
+    for i = s+1:e-1
+        u[i] = 0.0
+    end
+
+    tdms(a,bb,c,u,z,s,e)
+
+    fact = (x[s] + beta*x[e]/gamma)/(1.0 + z[s] + beta*z[e]/gamma)
+
+    for i = s:e
+        x[i] = x[i] - fact*z[i]
+    end
+end
+
+#-----------------------------------------------------------------------------#
 # Compute numerical solution
 #   - Time integration using Runge-Kutta third order
 #   - 5th-order Compact WENO scheme for spatial terms
@@ -36,33 +87,27 @@ function numerical(nx,ns,nt,dx,dt,u)
         u[i,k] = un[i] # store solution at t=0
     end
 
-    # dirichlet boundary condition
-    u[1,k], u[nx+1,k] = 0.0, 0.0
-    un[1] = 0.0
-    un[nx+1] = 0.0
-
-    # dirichlet boundary condition for temporary array
-    ut[1] = 0.0
-    ut[nx+1] = 0.0
-
-    for j = 1:nt
+    for j = 2:nt+1
         rhs(nx,dx,un,r)
 
-        for i = 2:nx
+        for i = 1:nx
             ut[i] = un[i] + dt*r[i]
         end
+        ut[nx+1] = ut[1] # periodic
 
         rhs(nx,dx,ut,r)
 
-        for i = 2:nx
+        for i = 1:nx
             ut[i] = 0.75*un[i] + 0.25*ut[i] + 0.25*dt*r[i]
         end
+        ut[nx+1] = ut[1] # periodic
 
         rhs(nx,dx,ut,r)
 
-        for i = 2:nx
+        for i = 1:nx
             un[i] = (1.0/3.0)*un[i] + (2.0/3.0)*ut[i] + (2.0/3.0)*dt*r[i]
         end
+        un[nx+1] = un[1] # periodic
 
         if (mod(j,freq) == 0)
             u[:,k] = un[:]
@@ -79,9 +124,9 @@ function rhs(nx,dx,u,r)
     uL = Array{Float64}(undef, nx)
     uR = Array{Float64}(undef, nx+1)
 
-    wenoL(nx,u,uL)
+    crwenoL(nx,u,uL)
 
-    wenoR(nx,u,uR)
+    crwenoR(nx,u,uR)
 
     for i = 2:nx
         if (u[i] >= 0.0)
@@ -90,29 +135,36 @@ function rhs(nx,dx,u,r)
             r[i] = -u[i]*(uR[i+1] - uR[i])/dx
         end
     end
+    #for i = 1; periodic
+    i = 1
+    if (u[i] >= 0.0)
+        r[i] = -u[i]*(uL[i] - uL[nx])/dx
+    else
+        r[i] = -u[i]*(uR[i+1] - uR[nx+1])/dx
+    end
 end
 
 #-----------------------------------------------------------------------------#
-# WENO reconstruction for upwind direction (positive; left to right)
+# CRWENO reconstruction for upwind direction (positive; left to right)
 # u(i): solution values at finite difference grid nodes i = 1,...,N+1
-# f(j): reconstructed values at nodes j = i+1/2; j = 1,...,N
+# f(j): reconstructed values at nodes j <== i+1/2; only use j = 1,2,...,N
 #-----------------------------------------------------------------------------#
-function wenoL(n,u,f)
+function crwenoL(n,u,f)
     a = Array{Float64}(undef, n)
     b = Array{Float64}(undef, n)
     c = Array{Float64}(undef, n)
     r = Array{Float64}(undef, n)
 
     i = 1
-    v1 = 3.0*u[i] - 2.0*u[i+1]
-    v2 = 2.0*u[i] - u[i+1]
+    v1 = u[n-1]
+    v2 = u[n]
     v3 = u[i]
     v4 = u[i+1]
     v5 = u[i+2]
     f[i] = wcL(v1,v2,v3,v4,v5)
 
     i = 2
-    v1 = 2.0*u[i-1] - u[i]
+    v1 = u[n]
     v2 = u[i-1]
     v3 = u[i]
     v4 = u[i+1]
@@ -133,30 +185,29 @@ function wenoL(n,u,f)
     v2 = u[i-1]
     v3 = u[i]
     v4 = u[i+1]
-    v5 = 2.0*u[i+1]-u[i]
+    v5 = u[2]
     f[i] = wcL(v1,v2,v3,v4,v5)
 
 end
 
 #-----------------------------------------------------------------------------#
-# CRWENO reconstruction for downwind direction (negative; right to left)
-# u(i): solution values at finite difference grid nodes i = 1,...,N+1
-# f(j): reconstructed values at nodes j = i-1/2; j = 2,...,N+1
+# CRWENO reconstruction for downwind direction (negative;right to left)
+# u(i): solution values at finite difference grid nodes i =1,...,N+1
+# f(j): reconstructed values at nodes j <== i-1/2; only use j = 2,...,N+1
 #-----------------------------------------------------------------------------#
-function wenoR(n,u,f)
+function crwenoR(n,u,f)
     a = Array{Float64}(undef, n+1)
     b = Array{Float64}(undef, n+1)
     c = Array{Float64}(undef, n+1)
     r = Array{Float64}(undef, n+1)
 
     i = 2
-    v1 = 2.0*u[i-1] - u[i]
+    v1 = u[n]
     v2 = u[i-1]
     v3 = u[i]
     v4 = u[i+1]
     v5 = u[i+2]
     f[i] = wcR(v1,v2,v3,v4,v5)
-
 
     for i = 3:n-1
         v1 = u[i-2]
@@ -172,15 +223,15 @@ function wenoR(n,u,f)
     v2 = u[i-1]
     v3 = u[i]
     v4 = u[i+1]
-    v5 = 2.0*u[i+1] - u[i]
+    v5 = u[2]
     f[i] = wcR(v1,v2,v3,v4,v5)
 
     i = n+1
     v1 = u[i-2]
     v2 = u[i-1]
     v3 = u[i]
-    v4 = 2.0*u[i] - u[i-1]
-    v5 = 3.0*u[i] - 2.0*u[i-1]
+    v4 = u[2]
+    v5 = u[3]
     f[i] = wcR(v1,v2,v3,v4,v5)
 
 end
@@ -191,14 +242,12 @@ end
 function wcL(v1,v2,v3,v4,v5)
     eps = 1.0e-6
 
-    # smoothness indicators
     s1 = (13.0/12.0)*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
     s2 = (13.0/12.0)*(v2-2.0*v3+v4)^2 + 0.25*(v2-v4)^2
     s3 = (13.0/12.0)*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
 
-    # computing nonlinear weights w1,w2,w3
-    c1 = 1.0e-1/((eps+s1)^2)
-    c2 = 6.0e-1/((eps+s2)^2)
+    c1 = 2.0e-1/((eps+s1)^2)
+    c2 = 5.0e-1/((eps+s2)^2)
     c3 = 3.0e-1/((eps+s3)^2)
 
     w1 = c1/(c1+c2+c3)
@@ -228,8 +277,8 @@ function wcR(v1,v2,v3,v4,v5)
     s3 = (13.0/12.0)*(v3-2.0*v4+v5)^2 + 0.25*(3.0*v3-4.0*v4+v5)^2
 
     c1 = 3.0e-1/(eps+s1)^2
-    c2 = 6.0e-1/(eps+s2)^2
-    c3 = 1.0e-1/(eps+s3)^2
+    c2 = 5.0e-1/(eps+s2)^2
+    c3 = 2.0e-1/(eps+s3)^2
 
     w1 = c1/(c1+c2+c3)
     w2 = c2/(c1+c2+c3)
@@ -243,6 +292,7 @@ function wcR(v1,v2,v3,v4,v5)
     # reconstructed value at interface
     f = (w1*q1 + w2*q2 + w3*q3)
 
+    return f
 end
 
 #---------------------------------------------------------------------------#
@@ -262,7 +312,7 @@ numerical(nx,ns,nt,dx,dt,u)
 
 x = Array(0:dx:1.0)
 
-solution = open("solution_d.txt", "w")
+solution = open("solution_p.txt", "w")
 
 for i = 1:nx+1
     write(solution, string(x[i]), " ",)

@@ -76,13 +76,16 @@ end
 #   - Time integration using Runge-Kutta third order
 #   - 2nd-order finite difference discretization
 #-----------------------------------------------------------------------------#
-function numerical(nx,ny,nt,dx,dy,dt,re,wn)
+function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
 
     wt = Array{Float64}(undef, nx+2, ny+2) # temporary array during RK3 integration
     r = Array{Float64}(undef, nx+2, ny+2)
+    ut = Array{Float64}(undef, nx+1, ny+1)
+
+    m = 1 # record index
+    freq = Int64(nt/ns)
 
     for k = 1:nt
-        println(k)
         # Compute right-hand-side from vorticity
         rhs(nx,ny,dx,dy,re,wn,r)
 
@@ -127,6 +130,16 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn)
         # ghost points
         wn[1,:] = wn[nx+1,:]
         wn[:,1] = wn[:,ny+1]
+
+        if (mod(k,freq) == 0)
+            println(k)
+            ut = wn[2:nx+2,2:ny+2]
+            field_final = open(string("vm",string(m),".txt"), "w");
+            for j = 1:ny+1 for i = 1:nx+1
+                write(field_final, string(x[i]), " ",string(y[j]), " ", string(ut[i,j]), " \n")
+            end end
+            m = m+1
+        end
     end
 
     return wn[2:nx+2,2:ny+2]
@@ -214,6 +227,7 @@ dt = 0.01
 tf = 20.0
 nt = tf/dt
 re = 1000.0
+ns = 10
 
 x = Array{Float64}(undef, nx+1)
 y = Array{Float64}(undef, ny+1)
@@ -227,6 +241,7 @@ end
 
 wn = Array{Float64}(undef, nx+2, ny+2)
 un = Array{Float64}(undef, nx+1, ny+1)
+un0 = Array{Float64}(undef, nx+1, ny+1)
 ue = Array{Float64}(undef, nx+1, ny+1)
 uerror = Array{Float64}(undef, nx+1, ny+1)
 
@@ -237,9 +252,24 @@ vm_ic(nx,ny,x,y,wn)
 wn[1,:] = wn[nx+1,:]
 wn[:,1] = wn[:,ny+1]
 
-un = numerical(nx,ny,nt,dx,dy,dt,re,wn)
+wn[nx+2,:] = wn[2,:]
+wn[:,ny+2] = wn[:,2]
+
+un0 = wn[2:nx+2,2:ny+2]
+
+field_final = open("vm0.txt", "w");
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(un0[i,j]), " \n")
+end end
+
+un = numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
 
 time = tf
+
+field_final = open("field_final.txt", "w");
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(un[i,j]), " \n")
+end end
 
 p1 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Numerical")
 savefig(p1,"vm.pdf")

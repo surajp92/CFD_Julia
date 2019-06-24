@@ -41,7 +41,7 @@ XX = repeat(xx, 1, length(yy))
 XX = convert(Matrix,transpose(XX))
 YY = repeat(yy, 1, length(xx))
 
-fig = figure("An example", figsize=(12,6));
+fig = figure("An example", figsize=(14,6));
 ax1 = fig[:add_subplot](1,2,1);
 ax2 = fig[:add_subplot](1,2,2);
 
