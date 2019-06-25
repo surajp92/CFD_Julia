@@ -26,7 +26,7 @@ function numerical(nx,ns,nt,dx,dt,q)
 
 	# TVD RK3 for time integration
     for n = 1:nt # time step
-		println(n)
+
         rhs(nx,dx,un,r)
 
         for i = 1:nx
@@ -46,6 +46,7 @@ function numerical(nx,ns,nt,dx,dt,q)
         end
 
         if (mod(n,freq) == 0)
+			println(n*dt)
             k = k+1
 			for i = 1:nx
             	u[i,k] = un[i]
@@ -101,10 +102,10 @@ function rusanov(nx,u,uL,uR,f,fL,fR)
 	# propagation speed
 	ps = Array{Float64}(undef,nx+1)
 	for i = 2:nx
-		ps[i] = max(abs(ps[i]), abs(ps[i-1]))
+		ps[i] = max(abs(u[i]), abs(u[i-1]))
 	end
-	ps[1] = max(abs(ps[1]), abs(ps[nx]))
-	ps[nx+1] = max(abs(ps[1]), abs(ps[nx]))
+	ps[1] = max(abs(u[1]), abs(u[nx]))
+	ps[nx+1] = max(abs(u[1]), abs(u[nx]))
 
 	# Interface fluxes (Rusanov)
 	for i = 1:nx+1

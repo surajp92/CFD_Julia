@@ -14,6 +14,29 @@ function compute_l2norm(nx,r)
     return rms
 end
 
+#-----------------------------------------------------------------------------#
+# Solution to tridigonal system using Thomas algorithm (part of ctdms)
+#-----------------------------------------------------------------------------#
+function tdms(a,b,c,r,x,s,e)
+    gam = Array{Float64}(undef, e)
+    bet = b[s]
+    x[s] = r[s]/bet
+
+    for i = s+1:e
+        gam[i] = c[i-1]/bet
+        bet = b[i] - a[i]*gam[i]
+        x[i] = (r[i] - a[i]*x[i-1])/bet
+    end
+
+    for i = e-1:-1:s
+        x[i] = x[i] - gam[i+1]*x[i+1]
+    end
+    return x
+end
+
+#-----------------------------------------------------------------------------#
+# Solution to tridigonal system using Thomas algorithm
+#-----------------------------------------------------------------------------#
 function tdma(a,b,c,r,s,e)
     up = Array{Float64}(undef, nx+1)
     for i = s+1:e+1
@@ -48,6 +71,7 @@ a = Array{Float64}(undef, nx+1)
 b = Array{Float64}(undef, nx+1)
 c = Array{Float64}(undef, nx+1)
 r = Array{Float64}(undef, nx+1)
+p = Array{Float64}(undef, nx+1)
 
 for i = 1:nx+1
     x[i] = x_l + dx*(i-1)  # location of each grid point
@@ -82,7 +106,9 @@ for k = 2:nt+1
     end
     r[1] = 0.0
     r[nx+1] = 0.0
-    u_n[k,:] = tdma(a,b,c,r,s,e)
+    tdms(a,b,c,r,p,s,e)
+    u_n[k,:] = p
+    #tdms(a,b,c,r,u_n[k,:],s,e)
 end
 
 # compute L2 norm of the error

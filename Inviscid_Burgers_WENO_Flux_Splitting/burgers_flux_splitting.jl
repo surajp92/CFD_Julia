@@ -56,19 +56,10 @@ function numerical(nx,ns,nt,dx,dt,q)
 end
 
 #-----------------------------------------------------------------------------#
-# Calculate fluxes
-#-----------------------------------------------------------------------------#
-function fluxes(nx,u,f)
-	for i = 1:nx+1
-		f[i] = 0.5*u[i]*u[i]
-	end
-end
-
-#-----------------------------------------------------------------------------#
 # Calculate right hand side terms of the Euler equations
 #-----------------------------------------------------------------------------#
 function rhs(nx,dx,u,r)
-	# flux computed at nodal points an dpositive and negative splitting
+	# flux computed at nodal points and positive and negative splitting
 	f = Array{Float64}(undef,nx)
     fP = Array{Float64}(undef,nx)
     fN = Array{Float64}(undef,nx)

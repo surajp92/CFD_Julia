@@ -247,8 +247,8 @@ end
 #-------------------------------------------------------------------------------
 nx = Int64(64)
 ny = Int64(64)
-n_level = 5
-tolerance = Float64(1.0e-12)
+n_level = 6
+tolerance = Float64(1.0e-10)
 max_iter = Int64(100000)
 
 # create output file for L2-norm
