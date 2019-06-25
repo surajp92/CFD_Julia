@@ -65,8 +65,8 @@ function fps(nx,ny,dx,dy,f)
     return u
 end
 
-nx = 128
-ny = 128
+nx = 512
+ny = 512
 
 x_l = 0.0
 x_r = 1.0

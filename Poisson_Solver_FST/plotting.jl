@@ -5,8 +5,8 @@ using PyPlot
 #rc("font", family="Times New Roman", size=18.0)
 rc("font", family="Arial", size=16.0)
 
-nx = 128
-ny = 128
+nx = 512
+ny = 512
 
 init_field = readdlm("field_initial.txt")#, type=Float64)
 final_field = readdlm("field_final.txt")#, datarow = 3, type=Float64)

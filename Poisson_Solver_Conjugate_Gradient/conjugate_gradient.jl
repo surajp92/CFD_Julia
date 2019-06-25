@@ -112,8 +112,8 @@ function conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
     close(residual_plot)
 end
 
-nx = Int64(128)
-ny = Int64(128)
+nx = Int64(512)
+ny = Int64(512)
 tolerance = Float64(1.0e-12)
 max_iter = Int64(100000)
 tiny = Float64(1.0e-16)
