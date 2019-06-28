@@ -45,6 +45,7 @@ fig = figure("An example", figsize=(14,6));
 ax1 = fig[:add_subplot](1,2,1);
 ax2 = fig[:add_subplot](1,2,2);
 
+
 cs = ax1.contourf(xx, yy, transpose(u_e),levels=20, cmap="jet", vmin=-1, vmax=1)
 ax1.set_title("Exact solution")
 plt[:subplot](ax1); cs

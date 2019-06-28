@@ -121,8 +121,11 @@ function rhs(nx,dx,gamma,q,r)
 	fluxes(nx,gamma,qL,fL)
 	fluxes(nx,gamma,qR,fR)
 
-	# compute Riemann solver
-	rusanov(nx,gamma,q,qL,qR,f,fL,fR)
+	# compute Riemann solver using Gudanov scheme
+	# gudanov(nx,gamma,qL,qR,f,fL,fR)
+
+	# compute Riemann solver using HLLC scheme
+	hllc(nx,gamma,qL,qR,f,fL,fR)
 
 	# RHS
 	for i = 1:nx for m = 1:3
@@ -131,14 +134,72 @@ function rhs(nx,dx,gamma,q,r)
 end
 
 #-----------------------------------------------------------------------------#
+# Riemann solver: HLLC
+#-----------------------------------------------------------------------------#
+function hllc(nx,gamma,uL,uR,f,fL,fR)
+	gm = gamma-1.0
+	Ds = Array{Float64}(undef,3)
+	Ds[1], Ds[2] = 0.0, 1.0
+
+	for i = 1:nx+1
+		# left state
+		rhLL = uL[i,1]
+		uuLL = uL[i,2]/rhLL
+		eeLL = uL[i,3]/rhLL
+	    ppLL = gm*(eeLL*rhLL - 0.5*rhLL*(uuLL*uuLL))
+		aaLL = sqrt(abs(gamma*ppLL/rhLL))
+
+		# right state
+		rhRR = uR[i,1]
+		uuRR = uR[i,2]/rhRR
+		eeRR = uR[i,3]/rhRR
+	    ppRR = gm*(eeRR*rhRR - 0.5*rhRR*(uuRR*uuRR))
+		aaRR = sqrt(abs(gamma*ppRR/rhRR))
+
+		# compute SL and Sr
+		SL = min(uuLL,uuRR) - max(aaLL,aaRR)
+		SR = max(uuLL,uuRR) + max(aaLL,aaRR)
+
+		# compute compound speed
+		SP = (ppRR - ppLL + rhLL*uuLL*(SL-uuLL) - rhRR*uuRR*(SR-uuRR))/
+			 (rhLL*(SL-uuLL) - rhRR*(SR-uuRR)) #never get zero
+
+		# compute compound pressure
+		PLR = 0.5*(ppLL + ppRR + rhLL*(SL-uuLL)*(SP-uuLL)+
+				   rhRR*(SR-uuRR)*(SP-uuRR))
+
+		# compute D
+		Ds[3] = SP
+
+		if (SL >= 0.0)
+			for m = 1:3
+				f[i,m] = fL[i,m]
+			end
+		elseif (SR <= 0.0)
+			for m =1:3
+				f[i,m] = fR[i,m]
+			end
+		elseif ((SP >=0.0) & (SL <= 0.0))
+			for m = 1:3
+				f[i,m] = (SP*(SL*uL[i,m]-fL[i,m]) + SL*PLR*Ds[m])/(SL-SP)
+			end
+		elseif ((SP <= 0.0) & (SR >= 0.0))
+			for m = 1:3
+				f[i,m] = (SP*(SR*uR[i,m]-fR[i,m]) + SR*PLR*Ds[m])/(SR-SP)
+			end
+		end
+	end
+end
+
+#-----------------------------------------------------------------------------#
 # Riemann solver: Rusanov
 #-----------------------------------------------------------------------------#
-function rusanov(nx,gamma,q,qL,qR,f,fL,fR)
+function gudanov(nx,gamma,qL,qR,f,fL,fR)
 
 	ps = Array{Float64}(undef,nx+1)
 
 	#wavespeed(nx,gamma,q,ps)
-	wavespeed2(nx,gamma,qL,qR,ps)
+	wavespeed(nx,gamma,qL,qR,ps)
 	# Interface fluxes (Rusanov)
 	for i = 1:nx+1 for m = 1:3
 		f[i,m] = 0.5*(fR[i,m]+fL[i,m]) - 0.5*ps[i]*(qR[i,m]-qL[i,m])
@@ -148,7 +209,7 @@ end
 #-----------------------------------------------------------------------------#
 # compute wave speed
 #-----------------------------------------------------------------------------#
-function wavespeed(nx,gamma,q,ps)
+function wavespeed2(nx,gamma,q,ps)
 	rad = Array{Float64}(undef,nx)
 	# spectral radius of Jacobian
 	for i = 1:nx
@@ -167,7 +228,7 @@ function wavespeed(nx,gamma,q,ps)
 	ps[nx+1] = ps[nx]
 end
 
-function wavespeed2(nx,gamma,uL,uR,ps)
+function wavespeed(nx,gamma,uL,uR,ps)
 	rad = Array{Float64}(undef,nx)
 	# spectral radius of Jacobian
 	gm = gamma-1.0
@@ -186,13 +247,14 @@ function wavespeed2(nx,gamma,uL,uR,ps)
 	    ppRR = gm*(eeRR*rhRR - 0.5*rhRR*(uuRR*uuRR))
 	    hhRR = eeRR + ppRR/rhRR
 
-		alpha = 1.0/(sqrt(rhLL) + sqrt(rhRR))
+		alpha = 1.0/(sqrt(abs(rhLL)) + sqrt(abs(rhRR)))
 
-		uu = (sqrt(rhLL)*uuLL + sqrt(rhRR)*uuRR)*alpha
-		hh = (sqrt(rhLL)*hhLL + sqrt(rhRR)*hhRR)*alpha
+		uu = (sqrt(abs(rhLL))*uuLL + sqrt(abs(rhRR))*uuRR)*alpha
+		hh = (sqrt(abs(rhLL))*hhLL + sqrt(abs(rhRR))*hhRR)*alpha
 		aa = sqrt(abs(gm*(hh-0.5*uu*uu)))
 
-		ps[i] = aa + abs(uu)
+#		ps[i] = aa + abs(uu)
+		ps[i] = abs(aa + uu)
 	end
 end
 #-----------------------------------------------------------------------------#
@@ -380,9 +442,9 @@ end
 #---------------------------------------------------------------------------#
 # main program
 #---------------------------------------------------------------------------#
-nx = 512
+nx = 8192
 ns = 20
-dt = 0.0001
+dt = 0.00005
 tm = 0.20
 
 dx = 1.0/nx
@@ -395,17 +457,22 @@ numerical(nx,ns,nt,dx,dt,q)
 
 x = Array(0.5*dx:dx:1.0-0.5*dx)
 
-solution_d = open("solution_d.txt", "w")
-solution_v = open("solution_v.txt", "w")
+solution_d = open("solution_dF.txt", "w")
+solution_v = open("solution_vF.txt", "w")
+solution_e = open("solution_eF.txt", "w")
 for i = 1:nx
     write(solution_d, string(x[i]), " ",)
 	write(solution_v, string(x[i]), " ",)
+	write(solution_e, string(x[i]), " ",)
     for n = 1:ns+1
         write(solution_d, string(q[i,1,n]), " ")
 		write(solution_v, string(q[i,2,n]), " ")
+		write(solution_e, string(q[i,3,n]), " ")
     end
     write(solution_d, "\n",)
 	write(solution_v, "\n",)
+	write(solution_e, "\n",)
 end
 close(solution_d)
 close(solution_v)
+close(solution_e)

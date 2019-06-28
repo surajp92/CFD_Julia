@@ -17,7 +17,7 @@ color=[:red :blue]
 fig, ax = plt.subplots()
 ax.semilogy(iter_hist, res_hist[:,1], color="red",lw=2,label="rms")
 ax.semilogy(iter_hist, res_hist[:,2], color="blue",lw=2,label="rms/rms\$_0\$")
-ax.set_xlim(0,2600)
+#ax.set_xlim(0,2600)
 ax.legend()
 fig.tight_layout()
 fig.savefig("mg_residual.pdf")

@@ -25,25 +25,25 @@ fig = figure("An example", figsize=(14,6));
 ax1 = fig[:add_subplot](1,2,1);
 ax2 = fig[:add_subplot](1,2,2);
 
-ax1.semilogy(gs_iter_hist, gs_res_hist[:,2],color="blue",
-            lw=2,label="Gauss-Seidel method")
+# ax1.semilogy(gs_iter_hist, gs_res_hist[:,2],color="blue",
+#             lw=4,label="Gauss-Seidel method")
 ax1.semilogy(cg_iter_hist, cg_res_hist[:,2],color="orange",
-            lw=2,label="Conjugate-Gradient method")
-ax1.semilogy(mg_iter_hist, mg_res_hist[:,2],color="green",
-            lw=2,label="Multigrid framework")
+            lw=4,label="Conjugate-Gradient method")
+# ax1.semilogy(mg_iter_hist, mg_res_hist[:,2],color="green",
+#             lw=4,label="Multigrid framework")
 
 #ax.set_xlim(0,1000)
 ax1.legend()
-ax1.set_title("Residual history")
+# ax1.set_title("Residual history")
 
-ax2.semilogy(cg_iter_hist, cg_res_hist[:,2],color="orange",
-            lw=2,label="Conjugate-Gradient method")
+# ax2.semilogy(cg_iter_hist, cg_res_hist[:,2],color="orange",
+#             lw=2,label="Conjugate-Gradient method")
 ax2.semilogy(mg_iter_hist, mg_res_hist[:,2],color="green",
-            lw=2,label="Multigrid framework")
+            lw=4,label="Multigrid framework")
 
 #ax.set_xlim(0,1000)
 ax2.legend()
-plt.title("Residual history")
+# plt.title("Residual history")
 
 fig.tight_layout()
-fig.savefig("residual.pdf")
+fig.savefig("residual2.pdf")

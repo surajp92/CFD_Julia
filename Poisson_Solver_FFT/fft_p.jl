@@ -19,7 +19,7 @@ function compute_l2norm(nx, ny, r)
     return rms
 end
 
-function fps(nx,ny,dx,dy,f)
+function ps_fft(nx,ny,dx,dy,f)
     eps = 1.0e-6
 
     kx = Array{Float64}(undef,nx)
@@ -118,7 +118,7 @@ end end
 
 val, t, bytes, gctime, memallocs = @timed begin
 
-un[1:nx,1:ny] = fps(nx,ny,dx,dy,f)
+un[1:nx,1:ny] = ps_fft(nx,ny,dx,dy,f)
 
 end
 

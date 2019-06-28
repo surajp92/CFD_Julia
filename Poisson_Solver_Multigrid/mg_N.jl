@@ -1,4 +1,4 @@
-clearconsole()
+#clearconsole()
 
 using CPUTime
 using Printf
@@ -105,7 +105,7 @@ end
 function mg_N(dx, dy, nx, ny, r, f, u_n, rms,
             v1, v2, v3, init_rms, maximum_iterations, output, n_level)
 
-    residual_plot = open("residual.txt", "w")
+    residual_plot = open("mg_residual.txt", "w")
 
     count = 0.0
 
@@ -245,9 +245,10 @@ function mg_N(dx, dy, nx, ny, r, f, u_n, rms,
 end
 
 #-------------------------------------------------------------------------------
-nx = Int64(64)
-ny = Int64(64)
-n_level = 6
+ipr = 1
+nx = Int64(512)
+ny = Int64(512)
+n_level = 9
 tolerance = Float64(1.0e-10)
 max_iter = Int64(100000)
 
@@ -291,21 +292,23 @@ c1 = (1.0/16.0)^2
 c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
-    # u_e[i,j] = sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
-    #            c1*sin(16.0*pi*x[i])*sin(16.0*pi*y[j])
-    #
-    # f[i,j] = 4.0*c2*sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
-    #          c2*sin(16.0*pi*x[i])*sin(16.0*pi*y[j])
-    #
-    # u_n[i,j] = 0.0
+    if ipr == 1
+        u_e[i,j] = (x[i]^2 - 1.0)*(y[j]^2 - 1.0)
 
-    u_e[i,j] = sin(pi*x[i])*sin(pi*y[j]) +
-                   c1*sin(16.0*pi*x[i])*sin(16.0*pi*y[j])
+        f[i,j]  = -2.0*(2.0 - x[i]^2 - y[j]^2)
 
-    f[i,j] = c2*sin(pi*x[i])*sin(pi*y[j]) +
-                 c2*sin(16.0*pi*x[i])*sin(16.0*pi*y[j])
+        u_n[i,j] = 0.0
+    end
 
-    u_n[i,j] = 0.0
+    if ipr == 2
+        u_e[i,j] = sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                   c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+        f[i,j] = 4.0*c2*sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                 c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+        u_n[i,j] = 0.0
+    end
 end end
 
 u_n[:,1] = u_e[:,1]

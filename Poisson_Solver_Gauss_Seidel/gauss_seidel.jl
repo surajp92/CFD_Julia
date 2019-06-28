@@ -1,4 +1,4 @@
-clearconsole()
+#clearconsole()
 
 using CPUTime
 using Printf
@@ -30,7 +30,7 @@ end
 function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
                       tolerance, output)
     # create text file for writing residual history
-    residual_plot = open("residual.txt", "w")
+    residual_plot = open("gs_residual.txt", "w")
     # write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
 
     count = 0.0
@@ -79,7 +79,7 @@ end
 
 nx = Int64(512)
 ny = Int64(512)
-tolerance = Float64(1.0e-12)
+tolerance = Float64(1.0e-10)
 max_iter = Int64(100000)
 
 # create output file for L2-norm
@@ -92,6 +92,7 @@ field_final = open("field_final.txt", "w")
 
 # write(field_initial, "x y f un ue \n")
 # write(field_final, "x y f un ue e \n")
+ipr = 1
 
 x_l = 0.0
 x_r = 1.0
@@ -119,13 +120,24 @@ c1 = (1.0/16.0)^2
 c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
-    u_e[i,j] = sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
-               c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
 
-    f[i,j] = 4.0*c2*sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
-             c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+    if ipr == 1
+        u_e[i,j] = (x[i]^2 - 1.0)*(y[j]^2 - 1.0)
 
-    u_n[i,j] = 0.0
+        f[i,j]  = -2.0*(2.0 - x[i]^2 - y[j]^2)
+
+        u_n[i,j] = 0.0
+    end
+
+    if ipr == 2
+        u_e[i,j] = sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                   c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+        f[i,j] = 4.0*c2*sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                 c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+        u_n[i,j] = 0.0
+    end
 end end
 
 u_n[:,1] = u_e[:,1]
@@ -147,6 +159,12 @@ val, t, bytes, gctime, memallocs = @timed begin
 gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, tolerance, output)
 
 end
+
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(u_n[i,j]), " ", string(u_e[i,j]), " \n")
+end end
+
 u_error = zeros(nx+1, ny+1)
 rms_error = 0.0
 
@@ -164,10 +182,7 @@ write(output, "L-2 Norm = ", string(rms_error), " \n");
 write(output, "Maximum Norm = ", string(max_error), " \n");
 write(output, "CPU Time = ", string(t), " \n");
 
-for j = 1:ny+1 for i = 1:nx+1
-    write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
-          " ", string(u_n[i,j]), " ", string(u_e[i,j]), " \n")
-end end
+
 
 close(field_initial)
 close(field_final)

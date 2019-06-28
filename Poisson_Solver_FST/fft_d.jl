@@ -19,7 +19,7 @@ function compute_l2norm(nx, ny, r)
     return rms
 end
 
-function fps_sine(nx,ny,dx,dy,f)
+function ps_fst(nx,ny,dx,dy,f)
 
     #kx = Array{Float64}(undef,nx)
     #ky = Array{Float64}(undef,ny)
@@ -102,7 +102,7 @@ end end
 
 val, t, bytes, gctime, memallocs = @timed begin
 
-un[2:nx,2:ny] = fps_sine(nx,ny,dx,dy,f)
+un[2:nx,2:ny] = ps_fst(nx,ny,dx,dy,f)
 
 end
 

@@ -1,4 +1,4 @@
-clearconsole()
+#clearconsole()
 
 using CPUTime
 using Printf
@@ -30,7 +30,7 @@ function conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
                       init_rms, max_iter, tolerance, tiny, output)
 
     # create text file for writing residual history
-    residual_plot = open("residual.txt", "w")
+    residual_plot = open("cg_residual.txt", "w")
     #write(residual_plot, "k"," ","rms"," ","rms/rms0"," \n")
 
     count = 0.0
@@ -112,9 +112,10 @@ function conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
     close(residual_plot)
 end
 
+ipr = 1
 nx = Int64(512)
 ny = Int64(512)
-tolerance = Float64(1.0e-12)
+tolerance = Float64(1.0e-10)
 max_iter = Int64(100000)
 tiny = Float64(1.0e-16)
 
@@ -152,13 +153,23 @@ c2 = -2.0*pi*pi
 
 for i = 1:nx+1 for j = 1:ny+1
 
-    u_e[i,j] = sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
-               c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+    if ipr == 1
+        u_e[i,j] = (x[i]^2 - 1.0)*(y[j]^2 - 1.0)
 
-    f[i,j] = 4.0*c2*sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
-                  c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+        f[i,j]  = -2.0*(2.0 - x[i]^2 - y[j]^2)
 
-    u_n[i,j] = 0.0
+        u_n[i,j] = 0.0
+    end
+
+    if ipr == 2
+        u_e[i,j] = sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                   c1*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+        f[i,j] = 4.0*c2*sin(2.0*pi*x[i]) * sin(2.0*pi*y[j]) +
+                 c2*sin(16.0*pi*x[i]) * sin(16.0*pi*y[j])
+
+        u_n[i,j] = 0.0
+    end
 end end
 
 u_n[:,1] = u_e[:,1]
