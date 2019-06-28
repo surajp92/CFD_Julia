@@ -16,7 +16,7 @@ function compute_l2norm(nx, ny, r)
     return rms
 end
 
-function fps(nx,ny,dx,dy,f)
+function ps_spectral(nx,ny,dx,dy,f)
     eps = 1.0e-6
 
     kx = Array{Float64}(undef,nx)
@@ -58,8 +58,8 @@ function fps(nx,ny,dx,dy,f)
     return u
 end
 
-nx = 128
-ny = 128
+nx = 512
+ny = 512
 
 x_l = 0.0
 x_r = 1.0
@@ -89,12 +89,6 @@ c2 = -8.0*pi*pi
 
 for j = 1:ny+1
     for i = 1:nx+1
-        # ue[i,j] = sin(3.0*2.0*pi*x[i]) + cos(2.0*2.0*pi*y[j])
-        # f[i,j] = -9.0*4.0*pi^2*sin(3.0*2.0*pi*x[i]) - 4.0*4.0*pi^2*cos(2.0*2.0*pi*y[j])
-
-        # ue[i,j] = cos(2.0*pi*x[i]) + cos(2.0*pi*y[j])
-        # f[i,j] = -4.0*pi*pi*ue[i,j]
-
         ue[i,j] = sin(2.0*pi*x[i])*sin(2.0*pi*y[j]) +
                c1*sin(km*2.0*pi*x[i])*sin(km*2.0*pi*y[j])
 
@@ -105,9 +99,18 @@ for j = 1:ny+1
     end
 end
 
+# create text file for initial and final field
+field_initial = open("field_initial.txt", "w")
+field_final = open("field_final_512.txt", "w")
+
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_initial, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
+end end
+
 val, t, bytes, gctime, memallocs = @timed begin
 
-un[1:nx,1:ny] = fps(nx,ny,dx,dy,f)
+un[1:nx,1:ny] = ps_spectral(nx,ny,dx,dy,f)
 
 end
 
@@ -128,7 +131,17 @@ println("L-2 Norm = ", rms_error);
 println("Maximum Norm = ", max_error);
 print("CPU Time = ", t);
 
-p1 = contour(x, y, transpose(ue), fill=true)
-p2 = contour(x, y, transpose(un), fill=true)
-p3 = plot(p1,p2, size = (1000, 400))
-savefig(p3,"contourp_spectral.pdf")
+for j = 1:ny+1 for i = 1:nx+1
+    write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
+          " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
+end end
+output = open("output_512.txt", "w");
+
+write(output, "Error details: \n");
+write(output, "L-2 Norm = ", string(rms_error), " \n");
+write(output, "Maximum Norm = ", string(max_error), " \n");
+write(output, "CPU Time = ", string(t), " \n");
+
+close(field_initial)
+close(field_final)
+close(output)

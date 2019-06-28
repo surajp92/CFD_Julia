@@ -109,7 +109,7 @@ end
 
 # create text file for initial and final field
 field_initial = open("field_initial.txt", "w")
-field_final = open("field_final.txt", "w")
+field_final = open("field_final_512.txt", "w")
 
 for j = 1:ny+1 for i = 1:nx+1
     write(field_initial, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),
@@ -144,5 +144,13 @@ for j = 1:ny+1 for i = 1:nx+1
           " ", string(un[i,j]), " ", string(ue[i,j]), " \n")
 end end
 
+output = open("output_512.txt", "w");
+
+write(output, "Error details: \n");
+write(output, "L-2 Norm = ", string(rms_error), " \n");
+write(output, "Maximum Norm = ", string(max_error), " \n");
+write(output, "CPU Time = ", string(t), " \n");
+
 close(field_initial)
 close(field_final)
+close(output)
