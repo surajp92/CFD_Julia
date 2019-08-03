@@ -23,3 +23,4 @@ This repository contains fundamental codes related to CFD that can be included i
 | 18 | 2D incompressible Navier-Stokes equations (cavity flow): Arakawa, FST, RK3 schemes |
 | 19 | 2D incompressible Navier-Stokes equations (vortex merging): Arakawa, FFT, RK3 schemes |
 | 20 | 2D incompressible Navier-Stokes equations (vortex merging): Hybrid RK3/CN approach |
+| 21 | 2D incompressible Navier-Stokes equations (vortex merging): Pseudospectral solver, Hybrid RK3/CN approach |
