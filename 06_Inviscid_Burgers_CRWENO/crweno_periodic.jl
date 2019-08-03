@@ -162,7 +162,7 @@ function crwenoL(n,u,f)
     v4 = u[i+1]
     v5 = u[i+2]
 
-    a1,a2,a3,b1,b2,b3 = wcL(v1,v2,v3,v4,v5)
+    a1,a2,a3,b1,b2,b3 = crwcL(v1,v2,v3,v4,v5)
     a[i] = a1
     b[i] = a2
     c[i] = a3
@@ -175,7 +175,7 @@ function crwenoL(n,u,f)
     v4 = u[i+1]
     v5 = u[i+2]
 
-    a1,a2,a3,b1,b2,b3 = wcL(v1,v2,v3,v4,v5)
+    a1,a2,a3,b1,b2,b3 = crwcL(v1,v2,v3,v4,v5)
     a[i] = a1
     b[i] = a2
     c[i] = a3
@@ -188,7 +188,7 @@ function crwenoL(n,u,f)
         v4 = u[i+1]
         v5 = u[i+2]
 
-        a1,a2,a3,b1,b2,b3 = wcL(v1,v2,v3,v4,v5)
+        a1,a2,a3,b1,b2,b3 = crwcL(v1,v2,v3,v4,v5)
         a[i] = a1
         b[i] = a2
         c[i] = a3
@@ -202,7 +202,7 @@ function crwenoL(n,u,f)
     v4 = u[i+1]
     v5 = u[2]
 
-    a1,a2,a3,b1,b2,b3 = wcL(v1,v2,v3,v4,v5)
+    a1,a2,a3,b1,b2,b3 = crwcL(v1,v2,v3,v4,v5)
     a[i] = a1
     b[i] = a2
     c[i] = a3
@@ -233,7 +233,7 @@ function crwenoR(n,u,f)
     v4 = u[i+1]
     v5 = u[i+2]
 
-    a1,a2,a3,b1,b2,b3 = wcR(v1,v2,v3,v4,v5)
+    a1,a2,a3,b1,b2,b3 = crwcR(v1,v2,v3,v4,v5)
     a[i] = a1
     b[i] = a2
     c[i] = a3
@@ -247,7 +247,7 @@ function crwenoR(n,u,f)
         v4 = u[i+1]
         v5 = u[i+2]
 
-        a1,a2,a3,b1,b2,b3 = wcR(v1,v2,v3,v4,v5)
+        a1,a2,a3,b1,b2,b3 = crwcR(v1,v2,v3,v4,v5)
         a[i] = a1
         b[i] = a2
         c[i] = a3
@@ -261,7 +261,7 @@ function crwenoR(n,u,f)
     v4 = u[i+1]
     v5 = u[2]
 
-    a1,a2,a3,b1,b2,b3 = wcR(v1,v2,v3,v4,v5)
+    a1,a2,a3,b1,b2,b3 = crwcR(v1,v2,v3,v4,v5)
     a[i] = a1
     b[i] = a2
     c[i] = a3
@@ -274,7 +274,7 @@ function crwenoR(n,u,f)
     v4 = u[2]
     v5 = u[3]
 
-    a1,a2,a3,b1,b2,b3 = wcR(v1,v2,v3,v4,v5)
+    a1,a2,a3,b1,b2,b3 = crwcR(v1,v2,v3,v4,v5)
     a[i] = a1
     b[i] = a2
     c[i] = a3
@@ -290,7 +290,7 @@ end
 #---------------------------------------------------------------------------#
 #nonlinear weights for upwind direction
 #---------------------------------------------------------------------------#
-function wcL(v1,v2,v3,v4,v5)
+function crwcL(v1,v2,v3,v4,v5)
     eps = 1.0e-6
 
     s1 = (13.0/12.0)*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2
@@ -320,7 +320,7 @@ end
 #---------------------------------------------------------------------------#
 #nonlinear weights for downwind direction
 #---------------------------------------------------------------------------#
-function wcR(v1,v2,v3,v4,v5)
+function crwcR(v1,v2,v3,v4,v5)
     eps = 1.0e-6
 
     s1 = (13.0/12.0)*(v1-2.0*v2+v3)^2 + 0.25*(v1-4.0*v2+3.0*v3)^2

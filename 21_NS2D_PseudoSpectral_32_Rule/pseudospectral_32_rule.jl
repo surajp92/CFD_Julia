@@ -46,6 +46,7 @@ function wavespace(nx,ny,dx,dy)
 
     return k2
 end
+
 #-----------------------------------------------------------------------------#
 # Compute numerical solution
 #   - Time integration using Runge-Kutta third order
@@ -92,24 +93,27 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
     end end
 
     for k = 1:nt
-        jnf = jacobian(nx,ny,dx,dy,wnf,k2)
+        jnf = jacobiandealiased(nx,ny,dx,dy,wnf,k2)
 
+        # 1st step
         for i = 1:nx for j = 1:ny
             w1f[i,j] = ((1.0 - d1[i,j])/(1.0 + d1[i,j]))*wnf[i,j] +
                         (gamma1*dt*jnf[i,j])/(1.0 + d1[i,j])
         end end
 
         w1f[1,1] = 0.0
-        j1f = jacobian(nx,ny,dx,dy,w1f,k2)
+        j1f = jacobiandealiased(nx,ny,dx,dy,w1f,k2)
 
+        # 2nd step
         for i = 1:nx for j = 1:ny
             w2f[i,j] = ((1.0 - d2[i,j])/(1.0 + d2[i,j]))*w1f[i,j] +
                         (rho2*dt*jnf[i,j] + gamma2*dt*j1f[i,j])/(1.0 + d2[i,j])
         end end
 
         w2f[1,1] = 0.0
-        j2f = jacobian(nx,ny,dx,dy,w2f,k2)
+        j2f = jacobiandealiased(nx,ny,dx,dy,w2f,k2)
 
+        # 3rd step
         for i = 1:nx for j = 1:ny
             wnf[i,j] = ((1.0 - d3[i,j])/(1.0 + d3[i,j]))*w2f[i,j] +
                         (rho3*dt*j1f[i,j] + gamma3*dt*j2f[i,j])/(1.0 + d3[i,j])
@@ -131,6 +135,99 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
     end
 
     return ut
+end
+
+#-----------------------------------------------------------------------------#
+# Calculate Jacobian in fourier space
+# jf = -J(w,ψ)
+#-----------------------------------------------------------------------------#
+function jacobiandealiased(nx,ny,dx,dy,wf,k2)
+    eps = 1.0e-6
+    kx = Array{Float64}(undef,nx)
+    ky = Array{Float64}(undef,ny)
+
+    #wave number indexing
+    hx = 2.0*pi/(nx*dx)
+
+    for i = 1:Int64(nx/2)
+        kx[i] = hx*(i-1.0)
+        kx[i+Int64(nx/2)] = hx*(i-Int64(nx/2)-1)
+    end
+    kx[1] = eps
+    ky = transpose(kx)
+
+    j1f = zeros(ComplexF64,nx,ny)
+    j2f = zeros(ComplexF64,nx,ny)
+    j3f = zeros(ComplexF64,nx,ny)
+    j4f = zeros(ComplexF64,nx,ny)
+
+    # x-derivative
+    for i = 1:nx for j = 1:ny
+        j1f[i,j] = 1.0im*wf[i,j]*kx[i]/k2[i,j]
+        j4f[i,j] = 1.0im*wf[i,j]*kx[i]
+    end end
+
+    # y-derivative
+    for i = 1:nx for j = 1:ny
+        j2f[i,j] = 1.0im*wf[i,j]*ky[j]
+        j3f[i,j] = 1.0im*wf[i,j]*ky[j]/k2[i,j]
+    end end
+
+    nxe = Int64(nx*2)
+    nye = Int64(ny*2)
+
+    j1f_padded = zeros(ComplexF64,nxe,nye)
+    j2f_padded = zeros(ComplexF64,nxe,nye)
+    j3f_padded = zeros(ComplexF64,nxe,nye)
+    j4f_padded = zeros(ComplexF64,nxe,nye)
+
+    j1f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j1f[1:Int64(nx/2),1:Int64(ny/2)]
+    j1f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j1f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j1f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j1f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j1f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j1f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+
+    j2f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j2f[1:Int64(nx/2),1:Int64(ny/2)]
+    j2f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j2f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j2f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j2f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j2f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j2f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+
+    j3f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j3f[1:Int64(nx/2),1:Int64(ny/2)]
+    j3f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j3f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j3f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j3f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j3f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j3f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+
+    j4f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j4f[1:Int64(nx/2),1:Int64(ny/2)]
+    j4f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j4f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j4f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j4f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j4f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j4f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+
+    j1f_padded = j1f_padded*(nxe*nye)/(nx*ny)
+    j2f_padded = j2f_padded*(nxe*nye)/(nx*ny)
+    j3f_padded = j3f_padded*(nxe*nye)/(nx*ny)
+    j4f_padded = j4f_padded*(nxe*nye)/(nx*ny)
+
+    j1 = real(ifft(j1f_padded))
+    j2 = real(ifft(j2f_padded))
+    j3 = real(ifft(j3f_padded))
+    j4 = real(ifft(j4f_padded))
+    jacp = zeros(Float64,nxe,nye)
+
+    for i = 1:nxe for j = 1:nye
+        jacp[i,j] = j1[i,j]*j2[i,j] - j3[i,j]*j4[i,j]
+    end end
+
+    jacpf = fft(jacp)
+
+    jf = zeros(ComplexF64,nx,ny)
+
+    jf[1:Int64(nx/2),1:Int64(ny/2)] = jacpf[1:Int64(nx/2),1:Int64(ny/2)]
+    jf[Int64(nx/2+1):nx,1:Int64(ny/2)] = jacpf[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)]
+    jf[1:Int64(nx/2),Int64(ny/2+1):ny] = jacpf[1:Int64(nx/2),Int64(nye-ny/2+1):nye]
+    jf[Int64(nx/2+1):nx,Int64(ny/2+1):ny] =  jacpf[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye]
+
+    jf = jf*(nx*ny)/(nxe*nye)
+
+    return jf
 end
 
 #-----------------------------------------------------------------------------#
@@ -273,6 +370,3 @@ for j = 1:ny+1 for i = 1:nx+1
 end end
 
 close(field_final)
-
-p1 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Numerical")
-savefig(p1,"vm.pdf")

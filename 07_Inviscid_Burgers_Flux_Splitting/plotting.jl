@@ -24,7 +24,7 @@ for i = 1:ns
     ax1.plot(xp, up[:,i], lw=1, label="t = $(tf*(i-1)/(ns-1))")
 end
 ax1.set_xlabel("\$x\$")
-ax1.set_ylabel("\$v\$")
+ax1.set_ylabel("\$u\$")
 ax1.set_title("Periodic boundary - flux splitting")
 ax1.set_xlim(0,1)
 ax1.legend(fontsize=14, loc=0, bbox_to_anchor=(0.55, 0.3, 0.5, 0.5))
@@ -33,7 +33,7 @@ for i = 1:ns
     ax2.plot(xd, ud[:,i], lw=1, label="t = $(tf*(i-1)/(ns-1))")
 end
 ax2.set_xlabel("\$x\$")
-ax2.set_ylabel("\$v\$")
+ax2.set_ylabel("\$u\$")
 ax2.set_title("Periodic boundary - Riemann solver")
 ax2.set_xlim(0,1)
 ax2.legend(fontsize=14, loc=0, bbox_to_anchor=(0.55, 0.3, 0.5, 0.5))

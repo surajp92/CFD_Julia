@@ -111,7 +111,41 @@ function rhs(nx,dx,gamma,q,r)
 	fL = Array{Float64}(undef,nx+1,3)
     fR = Array{Float64}(undef,nx+1,3)
 
-	f = Array{Float64}(undef,nx+1,3)
+	f = Array{Float64}(undef,nx,3)
+
+	#compute fluxes
+	for i = 1:nx
+		p = (gamma-1.0)*(q[i,3]-0.5*q[i,2]*q[i,2]/q[i,1])
+		f[i,1] = q[i,2]
+		f[i,2] = q[i,2]*q[i,2]/q[i,1] + p
+		f[i,3] = q[i,2]*q[i,3]/q[i,1] + p*q[i,2]/q[i,1]
+	end
+
+	# max wave speed
+	for i = 1:nx
+		a = sqrt((gamma*((gamma-1.0)*(q[i,3]-0.5*q[i,2]*q[i,2]/q[i,1]))/q[i,1]))
+		alp[i]=abs(q[i,2]/q[i,1]) + a
+	end
+
+	# max wave speed within local stencil
+	for i = 3:nx-3
+		a = sqrt((gamma*((gamma-1.0)*(q[i,3]-0.5*q[i,2]*q[i,2]/q[i,1]))/q[i,1]))
+		alpha[i]=max(alp[i-2],alp[i-1],alp[i],alp[i+1],alp[i+2])
+	end
+	alpha[1] = alp[1]
+	alpha[2] = alp[2]
+	alpha[nx-1] = alp[nx-1]
+	alpha[nx-2] = alp[nx-2]
+
+
+	#flux splitting
+	for i = 1:nx for m=1,3
+		fp[i,m] = 0.5*(f[i,m]+alpha[i]*q[i,m])
+		fm[i,m] = 0.5*(f[i,m]-alpha[i]*q[i,m])
+	end end
+
+
+	cwp(nx,gamma,q,fp,fm,fpw,fmw)
 
 	# WENO Reconstruction
 	qL = wenoL(nx,q)
@@ -132,6 +166,70 @@ function rhs(nx,dx,gamma,q,r)
 	for i = 1:nx for m = 1:3
 		r[i,m] = -(f[i+1,m] - f[i,m])/dx
 	end end
+end
+
+#-----------------------------------------------------------------------------#
+# Riemann solver: Roe's approximate Riemann solver
+#-----------------------------------------------------------------------------#
+function cwp(nx,gamma,u,fp,fm,fpw,fmw)
+	dd = Array{Float64}(undef,3)
+	dF = Array{Float64}(undef,3)
+	V = Array{Float64}(undef,3)
+	gm = gamma-1.0
+
+	for i = 1:nx
+		#Left and right states:
+		rhLL = uL[i,1]
+		uuLL = uL[i,2]/rhLL
+		eeLL = uL[i,3]/rhLL
+	    ppLL = gm*(eeLL*rhLL - 0.5*rhLL*(uuLL*uuLL))
+	    hhLL = eeLL + ppLL/rhLL
+
+		rhRR = uR[i,1]
+		uuRR = uR[i,2]/rhRR
+		eeRR = uR[i,3]/rhRR
+	    ppRR = gm*(eeRR*rhRR - 0.5*rhRR*(uuRR*uuRR))
+	    hhRR = eeRR + ppRR/rhRR
+
+		alpha = 1.0/(sqrt(abs(rhLL)) + sqrt(abs(rhRR)))
+
+		uu = (sqrt(abs(rhLL))*uuLL + sqrt(abs(rhRR))*uuRR)*alpha
+		hh = (sqrt(abs(rhLL))*hhLL + sqrt(abs(rhRR))*hhRR)*alpha
+		aa = sqrt(abs(gm*(hh-0.5*uu*uu)))
+
+		D11 = abs(uu)
+		D22 = abs(uu + aa)
+		D33 = abs(uu - aa)
+
+		beta = 0.5/(aa*aa)
+		phi2 = 0.5*gm*uu*uu
+
+		#Right eigenvector matrix
+		R11, R21, R31 = 1.0, uu, phi2/gm
+		R12, R22, R32 = beta, beta*(uu + aa), beta*(hh + uu*aa)
+		R13, R23, R33 = beta, beta*(uu - aa), beta*(hh - uu*aa)
+
+		#Left eigenvector matrix
+		L11, L12, L13 = 1.0-phi2/(aa*aa), gm*uu/(aa*aa), -gm/(aa*aa)
+		L21, L22, L23 = phi2 - uu*aa, aa - gm*uu, gm
+		L31, L32, L33 = phi2 + uu*aa, -aa - gm*uu, gm
+
+		for m = 1:3
+			V[m] = 0.5*(uR[i,m]-uL[i,m])
+		end
+
+		dd[1] = D11*(L11*V[1] + L12*V[2] + L13*V[3])
+		dd[2] = D22*(L21*V[1] + L22*V[2] + L23*V[3])
+		dd[3] = D33*(L31*V[1] + L32*V[2] + L33*V[3])
+
+		dF[1] = R11*dd[1] + R12*dd[2] + R13*dd[3]
+		dF[2] = R21*dd[1] + R22*dd[2] + R23*dd[3]
+		dF[3] = R31*dd[1] + R32*dd[2] + R33*dd[3]
+
+		for m = 1:3
+			f[i,m] = 0.5*(fR[i,m]+fL[i,m]) - dF[m]
+		end
+	end
 end
 
 #-----------------------------------------------------------------------------#

@@ -51,8 +51,8 @@ function ps_fst(nx,ny,dx,dy,f)
     return u
 end
 
-nx = 512
-ny = 512
+nx = 128
+ny = 128
 
 x_l = 0.0
 x_r = 1.0
