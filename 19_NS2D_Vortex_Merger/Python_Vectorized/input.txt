@@ -1,0 +1,12 @@
+128		!NXF=NYF, resolution
+2000	!NT, number of time step
+1.0e3	!Re, Reynolds number 
+1.0e-2	!dt; time step
+10	!nf;number of files to store
+1	!isolver:[1]ikeda, [2]arakawa
+1	!isc; [0]don't write-screen, [1]write-screen
+19	!ich; Check for the file
+2	!ipr; [1]TGV, [2]VM, [3]Decay 
+64	!NXC=NYC, coarse resolution
+0	!ichkp; [0]t=0, [1]checkpoint
+350	!istart; last saved file (starting point)

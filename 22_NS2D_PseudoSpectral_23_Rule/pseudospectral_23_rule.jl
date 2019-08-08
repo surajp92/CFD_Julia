@@ -93,7 +93,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
     end end
 
     for k = 1:nt
-        jnf = jacobiandealiased(nx,ny,dx,dy,wnf,k2)
+        jnf = jacobian(nx,ny,dx,dy,wnf,k2)
 
         # 1st step
         for i = 1:nx for j = 1:ny
@@ -102,7 +102,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
         end end
 
         w1f[1,1] = 0.0
-        j1f = jacobiandealiased(nx,ny,dx,dy,w1f,k2)
+        j1f = jacobian(nx,ny,dx,dy,w1f,k2)
 
         # 2nd step
         for i = 1:nx for j = 1:ny
@@ -111,7 +111,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
         end end
 
         w2f[1,1] = 0.0
-        j2f = jacobiandealiased(nx,ny,dx,dy,w2f,k2)
+        j2f = jacobian(nx,ny,dx,dy,w2f,k2)
 
         # 3rd step
         for i = 1:nx for j = 1:ny
@@ -141,7 +141,7 @@ end
 # Calculate Jacobian in fourier space
 # jf = -J(w,ψ)
 #-----------------------------------------------------------------------------#
-function jacobiandealiased(nx,ny,dx,dy,wf,k2)
+function jacobian(nx,ny,dx,dy,wf,k2)
     eps = 1.0e-6
     kx = Array{Float64}(undef,nx)
     ky = Array{Float64}(undef,ny)

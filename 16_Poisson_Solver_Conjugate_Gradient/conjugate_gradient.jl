@@ -192,6 +192,9 @@ conjugate_gradient(dx, dy, nx, ny, r, f, u_n, rms,
                       init_rms, max_iter, tolerance, tiny, output)
 
 end
+
+print("CPU time: ", t)
+
 u_error = zeros(nx+1, ny+1)
 rms_error = 0.0
 

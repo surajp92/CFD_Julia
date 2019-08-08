@@ -333,6 +333,9 @@ val, t, bytes, gctime, memallocs = @timed begin
 mg_N(dx, dy, nx, ny, r, f, u_n, rms, v1, v2, v3, init_rms, max_iter,
    output, n_level)
 end
+
+print("CPU time: ", t)
+
 u_error = zeros(nx+1, ny+1)
 rms_error = 0.0
 

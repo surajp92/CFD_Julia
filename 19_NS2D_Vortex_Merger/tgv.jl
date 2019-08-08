@@ -235,7 +235,13 @@ wn[2:nx+2,2:ny+2] = exact_tgv(nx,ny,x,y,time,re)
 wn[1,:] = wn[nx+1,:]
 wn[:,1] = wn[:,ny+1]
 
+val, t, bytes, gctime, memallocs = @timed begin
+
 un = numerical(nx,ny,nt,dx,dy,dt,re,wn)
+
+end
+
+print("CPU Time = ", t);
 
 time = tf
 ue = exact_tgv(nx,ny,x,y,time,re)

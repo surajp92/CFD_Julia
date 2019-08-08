@@ -44,7 +44,7 @@ function gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter,
     println(iter_count, " ", init_rms, " ", rms/init_rms)
 
     den = -2.0/dx^2 - 2.0/dy^2
-    for iter_count = 1:max_iter
+    for iter_count = 1:5*max_iter
 
         # compute solution at next time step ϕ^(k+1) = ϕ^k + ωr^(k+1)
         # residual = f + λ^2u - ∇^2u
@@ -80,7 +80,7 @@ end
 nx = Int64(512)
 ny = Int64(512)
 tolerance = Float64(1.0e-10)
-max_iter = Int64(100000)
+max_iter = Int64(20*100000)
 
 # create output file for L2-norm
 output = open("output.txt", "w");
@@ -159,6 +159,8 @@ val, t, bytes, gctime, memallocs = @timed begin
 gauss_seidel(dx, dy, nx, ny, r, f, u_n, rms, init_rms, max_iter, tolerance, output)
 
 end
+
+print("CPU time: ", t)
 
 for j = 1:ny+1 for i = 1:nx+1
     write(field_final, string(x[i]), " ",string(y[j]), " ", string(f[i,j]),

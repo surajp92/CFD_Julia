@@ -1,4 +1,4 @@
-clearconsole()
+#clearconsole()
 
 using CPUTime
 using Printf
@@ -139,6 +139,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
                 write(field_final, string(x[i]), " ",string(y[j]), " ", string(ut[i,j]), " \n")
             end end
             m = m+1
+            close(field_final)
         end
     end
 
@@ -262,7 +263,11 @@ for j = 1:ny+1 for i = 1:nx+1
     write(field_final, string(x[i]), " ",string(y[j]), " ", string(un0[i,j]), " \n")
 end end
 
+val, t, bytes, gctime, memallocs = @timed begin
 un = numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
+end
+
+print("CPU Time = ", t);
 
 time = tf
 
@@ -270,6 +275,4 @@ field_final = open("field_final.txt", "w");
 for j = 1:ny+1 for i = 1:nx+1
     write(field_final, string(x[i]), " ",string(y[j]), " ", string(un[i,j]), " \n")
 end end
-
-p1 = contour(x, y, transpose(un), fill=true,xlabel="\$X\$", ylabel="\$Y\$", title="Numerical")
-savefig(p1,"vm.pdf")
+close(field_final)

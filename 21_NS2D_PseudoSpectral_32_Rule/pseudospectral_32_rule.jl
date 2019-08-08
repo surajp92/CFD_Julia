@@ -1,4 +1,4 @@
-clearconsole()
+#clearconsole()
 
 using CPUTime
 using Printf
@@ -93,7 +93,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
     end end
 
     for k = 1:nt
-        jnf = jacobiandealiased(nx,ny,dx,dy,wnf,k2)
+        jnf = jacobian(nx,ny,dx,dy,wnf,k2)
 
         # 1st step
         for i = 1:nx for j = 1:ny
@@ -102,7 +102,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
         end end
 
         w1f[1,1] = 0.0
-        j1f = jacobiandealiased(nx,ny,dx,dy,w1f,k2)
+        j1f = jacobian(nx,ny,dx,dy,w1f,k2)
 
         # 2nd step
         for i = 1:nx for j = 1:ny
@@ -111,7 +111,7 @@ function numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
         end end
 
         w2f[1,1] = 0.0
-        j2f = jacobiandealiased(nx,ny,dx,dy,w2f,k2)
+        j2f = jacobian(nx,ny,dx,dy,w2f,k2)
 
         # 3rd step
         for i = 1:nx for j = 1:ny
@@ -141,7 +141,7 @@ end
 # Calculate Jacobian in fourier space
 # jf = -J(w,ψ)
 #-----------------------------------------------------------------------------#
-function jacobiandealiased(nx,ny,dx,dy,wf,k2)
+function jacobian(nx,ny,dx,dy,wf,k2)
     eps = 1.0e-6
     kx = Array{Float64}(undef,nx)
     ky = Array{Float64}(undef,ny)
@@ -173,43 +173,46 @@ function jacobiandealiased(nx,ny,dx,dy,wf,k2)
         j3f[i,j] = 1.0im*wf[i,j]*ky[j]/k2[i,j]
     end end
 
-    nxe = Int64(nx*2)
-    nye = Int64(ny*2)
+    nxe = Int64(nx*1.5)
+    nye = Int64(ny*1.5)
 
-    j1f_padded = zeros(ComplexF64,nxe,nye)
-    j2f_padded = zeros(ComplexF64,nxe,nye)
-    j3f_padded = zeros(ComplexF64,nxe,nye)
-    j4f_padded = zeros(ComplexF64,nxe,nye)
+    j1f_p = zeros(ComplexF64,nxe,nye)
+    j2f_p = zeros(ComplexF64,nxe,nye)
+    j3f_p = zeros(ComplexF64,nxe,nye)
+    j4f_p = zeros(ComplexF64,nxe,nye)
 
-    j1f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j1f[1:Int64(nx/2),1:Int64(ny/2)]
-    j1f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j1f[Int64(nx/2+1):nx,1:Int64(ny/2)]
-    j1f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j1f[1:Int64(nx/2),Int64(ny/2+1):ny]
-    j1f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j1f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+    qx = nxe-nx/2+1
+    qy = nye-ny/2+1
 
-    j2f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j2f[1:Int64(nx/2),1:Int64(ny/2)]
-    j2f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j2f[Int64(nx/2+1):nx,1:Int64(ny/2)]
-    j2f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j2f[1:Int64(nx/2),Int64(ny/2+1):ny]
-    j2f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j2f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+    j1f_p[1:Int64(nx/2),1:Int64(ny/2)] = j1f[1:Int64(nx/2),1:Int64(ny/2)]
+    j1f_p[Int64(qx):nxe,1:Int64(ny/2)] = j1f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j1f_p[1:Int64(nx/2),Int64(qy):nye] = j1f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j1f_p[Int64(qx):nxe,Int64(qy):nye] = j1f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
 
-    j3f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j3f[1:Int64(nx/2),1:Int64(ny/2)]
-    j3f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j3f[Int64(nx/2+1):nx,1:Int64(ny/2)]
-    j3f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j3f[1:Int64(nx/2),Int64(ny/2+1):ny]
-    j3f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j3f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+    j2f_p[1:Int64(nx/2),1:Int64(ny/2)] = j2f[1:Int64(nx/2),1:Int64(ny/2)]
+    j2f_p[Int64(qx):nxe,1:Int64(ny/2)] = j2f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j2f_p[1:Int64(nx/2),Int64(qy):nye] = j2f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j2f_p[Int64(qx):nxe,Int64(qy):nye] = j2f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
 
-    j4f_padded[1:Int64(nx/2),1:Int64(ny/2)] = j4f[1:Int64(nx/2),1:Int64(ny/2)]
-    j4f_padded[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)] = j4f[Int64(nx/2+1):nx,1:Int64(ny/2)]
-    j4f_padded[1:Int64(nx/2),Int64(nye-ny/2+1):nye] = j4f[1:Int64(nx/2),Int64(ny/2+1):ny]
-    j4f_padded[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye] = j4f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
+    j3f_p[1:Int64(nx/2),1:Int64(ny/2)] = j3f[1:Int64(nx/2),1:Int64(ny/2)]
+    j3f_p[Int64(qx):nxe,1:Int64(ny/2)] = j3f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j3f_p[1:Int64(nx/2),Int64(qy):nye] = j3f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j3f_p[Int64(qx):nxe,Int64(qy):nye] = j3f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
 
-    j1f_padded = j1f_padded*(nxe*nye)/(nx*ny)
-    j2f_padded = j2f_padded*(nxe*nye)/(nx*ny)
-    j3f_padded = j3f_padded*(nxe*nye)/(nx*ny)
-    j4f_padded = j4f_padded*(nxe*nye)/(nx*ny)
+    j4f_p[1:Int64(nx/2),1:Int64(ny/2)] = j4f[1:Int64(nx/2),1:Int64(ny/2)]
+    j4f_p[Int64(qx):nxe,1:Int64(ny/2)] = j4f[Int64(nx/2+1):nx,1:Int64(ny/2)]
+    j4f_p[1:Int64(nx/2),Int64(qy):nye] = j4f[1:Int64(nx/2),Int64(ny/2+1):ny]
+    j4f_p[Int64(qx):nxe,Int64(qy):nye] = j4f[Int64(nx/2+1):nx,Int64(ny/2+1):ny]
 
-    j1 = real(ifft(j1f_padded))
-    j2 = real(ifft(j2f_padded))
-    j3 = real(ifft(j3f_padded))
-    j4 = real(ifft(j4f_padded))
+    j1f_p = j1f_p*(nxe*nye)/(nx*ny)
+    j2f_p = j2f_p*(nxe*nye)/(nx*ny)
+    j3f_p = j3f_p*(nxe*nye)/(nx*ny)
+    j4f_p = j4f_p*(nxe*nye)/(nx*ny)
+
+    j1 = real(ifft(j1f_p))
+    j2 = real(ifft(j2f_p))
+    j3 = real(ifft(j3f_p))
+    j4 = real(ifft(j4f_p))
     jacp = zeros(Float64,nxe,nye)
 
     for i = 1:nxe for j = 1:nye
@@ -221,9 +224,9 @@ function jacobiandealiased(nx,ny,dx,dy,wf,k2)
     jf = zeros(ComplexF64,nx,ny)
 
     jf[1:Int64(nx/2),1:Int64(ny/2)] = jacpf[1:Int64(nx/2),1:Int64(ny/2)]
-    jf[Int64(nx/2+1):nx,1:Int64(ny/2)] = jacpf[Int64(nxe-nx/2+1):nxe,1:Int64(ny/2)]
-    jf[1:Int64(nx/2),Int64(ny/2+1):ny] = jacpf[1:Int64(nx/2),Int64(nye-ny/2+1):nye]
-    jf[Int64(nx/2+1):nx,Int64(ny/2+1):ny] =  jacpf[Int64(nxe-nx/2+1):nxe,Int64(nye-ny/2+1):nye]
+    jf[Int64(nx/2+1):nx,1:Int64(ny/2)] = jacpf[Int64(qx):nxe,1:Int64(ny/2)]
+    jf[1:Int64(nx/2),Int64(ny/2+1):ny] = jacpf[1:Int64(nx/2),Int64(qy):nye]
+    jf[Int64(nx/2+1):nx,Int64(ny/2+1):ny] =  jacpf[Int64(qx):nxe,Int64(qy):nye]
 
     jf = jf*(nx*ny)/(nxe*nye)
 
@@ -248,8 +251,8 @@ end
 #---------------------------------------------------------------------------#
 # main program
 #---------------------------------------------------------------------------#
-nx = 256
-ny = 256
+nx = 128
+ny = 128
 
 x_l = 0.0
 x_r = 2.0*pi
@@ -298,7 +301,11 @@ for j = 1:ny+1 for i = 1:nx+1
     write(field_final, string(x[i]), " ",string(y[j]), " ", string(un0[i,j]), " \n")
 end end
 
+val, t, bytes, gctime, memallocs = @timed begin
 un = numerical(nx,ny,nt,dx,dy,dt,re,wn,ns)
+end
+
+print("CPU Time = ", t);
 
 time = tf
 
@@ -306,5 +313,4 @@ field_final = open("field_final.txt", "w");
 for j = 1:ny+1 for i = 1:nx+1
     write(field_final, string(x[i]), " ",string(y[j]), " ", string(un[i,j]), " \n")
 end end
-
 close(field_final)
