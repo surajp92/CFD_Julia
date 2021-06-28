@@ -139,7 +139,7 @@ function rhs(nx,dx,gamma,q,r)
 
 
 	#flux splitting
-	for i = 1:nx for m=1,3
+	for i = 1:nx for m=1:3
 		fp[i,m] = 0.5*(f[i,m]+alpha[i]*q[i,m])
 		fm[i,m] = 0.5*(f[i,m]-alpha[i]*q[i,m])
 	end end
