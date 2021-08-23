@@ -1,5 +1,10 @@
 # CFD_Julia
-This repository contains fundamental codes related to CFD that can be included in any graduate level CFD coursework. Below is the summary of all codes included in CFD_Julia module. 
+This repository contains fundamental codes related to CFD that can be included in any graduate level CFD coursework. 
+
+# Published Journals
+For more details on this work, please refer CFD Julia: A Learning Module Structuring an Introductory Course on Computational Fluid Dynamics (https://www.mdpi.com/2311-5521/4/3/159)
+
+Below is the summary of all codes included in CFD_Julia module. 
 
 | Index | Description |
 | --- | --- |
