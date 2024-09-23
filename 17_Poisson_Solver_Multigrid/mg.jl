@@ -36,24 +36,24 @@ function restriction(nxf, nyf, nxc, nyc, r, ec)
         # NE, NW, SE, SW with respect to coarse grid point in fine grid
         corner = 1.0*(r[2*i-1+1, 2*j-1+1] + r[2*i-1+1, 2*j-1-1] +
                       r[2*i-1-1, 2*j-1+1] + r[2*i-1-1, 2*j-1-1])
-        # restriction using trapezoidal rule
+        # restriction using the trapezoidal rule
         ec[i,j] = (center + grid + corner)/16.0
     end end
 
     # restriction for boundary points bottom and top
-    for j = 1:nxc+1
+    for j = 1:nyc+1
         # bottom boundary i = 1
         ec[1,j] = r[1, 2*j-1]
-        # top boundary i = ny_coarse+1
-        ec[nyc+1,j] = r[nyf+1, 2*j-1]
+        # top boundary i = nx_coarse+1
+        ec[nxc+1,j] = r[nxf+1, 2*j-1]
     end
 
-    # restriction for boundary poinys left and right
-    for i = 1:nyc+1
+    # restriction for boundary points left and right
+    for i = 1:nxc+1
         # left boundary j = 1
         ec[i,1] = r[2*i-1,1]
-        # right boundary nx_coarse+1
-        ec[i,nxc+1] = r[2*i-1, nyf+1]
+        # right boundary j = ny_coarse+1
+        ec[i,nyc+1] = r[2*i-1, nyf+1]
     end
 end
 
