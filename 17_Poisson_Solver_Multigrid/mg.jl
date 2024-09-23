@@ -71,18 +71,18 @@ function prolongation(nxc, nyc, nxf, nyf, unc, ef)
     end end
 
     # update boundary points
-    for i = 1:nyc+1
+    for i = 1:nxc+1
         # left boundary j = 1
         ef[2*i-1,1] = unc[i,1]
-        # right boundary j = nx_fine+1
-        ef[2*i-1, nyf+1] = unc[i,nxc+1]
+        # right boundary j = ny_fine+1
+        ef[2*i-1,nyf+1] = unc[i,nyc+1]
     end
 
-    for j = 1:nxc+1
-        #bottom boundary i = 1
+    for j = 1:nyc+1
+        # bottom boundary i = 1
         ef[1,2*j-1] = unc[1,j]
-        # top boundary i =  ny_fine+1
-        ef[nyf+1,2*j-1] = unc[nyc+1,j]
+        # top boundary i = nx_fine+1
+        ef[nxf+1,2*j-1] = unc[nxc+1,j]
     end
 end
 
